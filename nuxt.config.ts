@@ -6,7 +6,12 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxtjs/tailwindcss',
+    '@pinia/nuxt'
   ],
+
+  imports: {
+    dirs: ['stores']
+  },
 
   css: [
     '@/assets/css/main.css',
@@ -22,5 +27,5 @@ export default defineNuxtConfig({
     '~/plugins/primevue.ts'
   ],
 
-  compatibilityDate: '2024-12-04',
+  compatibilityDate: '2024-12-04'
 })
