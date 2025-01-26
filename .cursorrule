@@ -1,0 +1,71 @@
+{
+  "description": "Project Structure:\n. \n├── app.vue                 # App entry point\n├── assets/                 # Static assets (CSS, images)\n├── components/             # Vue components\n    ├── common/            # Common/shared components\n    ├── home/             # Home page components\n    └── layout/           # Layout components\n├── layouts/               # Nuxt layouts\n├── pages/                 # Application pages\n├── plugins/               # Nuxt plugins\n├── public/                # Public static files\n├── server/                # Server-side code\n    ├── api/              # API endpoints\n    ├── models/           # Database models\n    └── utils/            # Server utilities\n└── stores/                # Pinia stores",
+  "excludePatterns": [
+    "node_modules",
+    "dist",
+    ".nuxt",
+    ".output",
+    "*.log",
+    ".git",
+    "*.lock"
+  ],
+  "includePatterns": [
+    "*.ts",
+    "*.js",
+    "*.vue",
+    "*.json",
+    "*.md"
+  ],
+  "searchPaths": [
+    "components",
+    "pages",
+    "server/api",
+    "server/models",
+    "stores"
+  ],
+  "importAliases": {
+    "@/*": "./*",
+    "~/*": "./*",
+    "@components/*": "./components/*",
+    "@stores/*": "./stores/*",
+    "@server/*": "./server/*"
+  },
+  "fileAssociations": {
+    "*.vue": "vue",
+    "*.ts": "typescript",
+    "*.js": "javascript",
+    "*.json": "json"
+  },
+  "snippets": {
+    "vue-script-setup": {
+      "prefix": "vss",
+      "body": [
+        "<script setup lang=\"ts\">",
+        "$1",
+        "</script>",
+        "",
+        "<template>",
+        "  $2",
+        "</template>"
+      ]
+    },
+    "pinia-store": {
+      "prefix": "pinia",
+      "body": [
+        "import { defineStore } from 'pinia'",
+        "",
+        "export const use$1Store = defineStore('$2', {",
+        "  state: () => ({",
+        "    $3",
+        "  }),",
+        "  actions: {",
+        "    $4",
+        "  }",
+        "})"
+      ]
+    }
+  },
+  "formatOnSave": true,
+  "lintOnSave": true,
+  "typeCheckOnSave": true
+} 

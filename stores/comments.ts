@@ -33,13 +33,31 @@ export const useCommentStore = defineStore('comments', {
 
   actions: {
     async fetchComments(productId: string) {
+      if (!productId) {
+        this.error = '無效的產品 ID'
+        return
+      }
+
       this.loading = true
+      this.error = null
+
       try {
         const response = await fetch(`/api/products/${productId}/comments`)
-        const data = await response.json()
-        this.comments = data
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || '獲取評論失敗')
+        }
+
+        if (result.success && Array.isArray(result.data)) {
+          this.comments = result.data
+        } else {
+          throw new Error('無效的評論數據格式')
+        }
       } catch (error) {
+        console.error('獲取評論錯誤:', error)
         this.error = error instanceof Error ? error.message : '獲取評論失敗'
+        this.comments = []
       } finally {
         this.loading = false
       }
@@ -54,21 +72,41 @@ export const useCommentStore = defineStore('comments', {
           },
           body: JSON.stringify(comment),
         })
-        const data = await response.json()
-        this.comments.push(data)
+        
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.message || '新增評論失敗')
+        }
+
+        if (result.success && result.data) {
+          this.comments.push(result.data)
+        } else {
+          throw new Error('無效的回應數據格式')
+        }
       } catch (error) {
+        console.error('新增評論錯誤:', error)
         this.error = error instanceof Error ? error.message : '新增評論失敗'
+        throw error
       }
     },
 
     async deleteComment(commentId: string) {
       try {
-        await fetch(`/api/comments/${commentId}`, {
+        const response = await fetch(`/api/comments/${commentId}`, {
           method: 'DELETE',
         })
+
+        if (!response.ok) {
+          const result = await response.json()
+          throw new Error(result.message || '刪除評論失敗')
+        }
+
         this.comments = this.comments.filter(c => c.id !== commentId)
       } catch (error) {
+        console.error('刪除評論錯誤:', error)
         this.error = error instanceof Error ? error.message : '刪除評論失敗'
+        throw error
       }
     }
   }

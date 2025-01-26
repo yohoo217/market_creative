@@ -45,26 +45,53 @@ export const useWorkStore = defineStore('works', {
   actions: {
     async fetchWorks() {
       this.loading = true
+      this.error = null
+      
       try {
         const response = await fetch('/api/works')
-        const data = await response.json()
-        this.works = data
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || '獲取作品失敗')
+        }
+
+        if (result.success && Array.isArray(result.data)) {
+          this.works = result.data
+        } else {
+          throw new Error('無效的作品數據格式')
+        }
       } catch (error) {
+        console.error('獲取作品錯誤:', error)
         this.error = error instanceof Error ? error.message : '獲取作品失敗'
+        this.works = []
       } finally {
         this.loading = false
       }
     },
 
     async fetchWorksByCreator(creatorId: string) {
+      if (!creatorId) return
+
       this.loading = true
+      this.error = null
+
       try {
         const response = await fetch(`/api/creators/${creatorId}/works`)
-        const data = await response.json()
-        // 更新現有作品列表，保留其他創作者的作品
-        const otherWorks = this.works.filter(w => w.creatorId !== creatorId)
-        this.works = [...otherWorks, ...data]
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || '獲取創作者作品失敗')
+        }
+
+        if (result.success && Array.isArray(result.data)) {
+          // 更新現有作品列表，保留其他創作者的作品
+          const otherWorks = this.works.filter(w => w.creatorId !== creatorId)
+          this.works = [...otherWorks, ...result.data]
+        } else {
+          throw new Error('無效的作品數據格式')
+        }
       } catch (error) {
+        console.error('獲取創作者作品錯誤:', error)
         this.error = error instanceof Error ? error.message : '獲取創作者作品失敗'
       } finally {
         this.loading = false
@@ -72,31 +99,51 @@ export const useWorkStore = defineStore('works', {
     },
 
     async likeWork(workId: string) {
+      if (!workId) return
+
       try {
         const response = await fetch(`/api/works/${workId}/like`, {
           method: 'POST',
         })
-        const data = await response.json()
-        const index = this.works.findIndex(w => w.id === workId)
-        if (index !== -1) {
-          this.works[index] = { ...this.works[index], likes: data.likes }
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || '操作失敗')
+        }
+
+        if (result.success) {
+          const index = this.works.findIndex(w => w.id === workId)
+          if (index !== -1) {
+            this.works[index] = { ...this.works[index], likes: result.data.likes }
+          }
         }
       } catch (error) {
+        console.error('點讚錯誤:', error)
         this.error = error instanceof Error ? error.message : '操作失敗'
       }
     },
 
     async viewWork(workId: string) {
+      if (!workId) return
+
       try {
         const response = await fetch(`/api/works/${workId}/view`, {
           method: 'POST',
         })
-        const data = await response.json()
-        const index = this.works.findIndex(w => w.id === workId)
-        if (index !== -1) {
-          this.works[index] = { ...this.works[index], views: data.views }
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || '操作失敗')
+        }
+
+        if (result.success) {
+          const index = this.works.findIndex(w => w.id === workId)
+          if (index !== -1) {
+            this.works[index] = { ...this.works[index], views: result.data.views }
+          }
         }
       } catch (error) {
+        console.error('瀏覽錯誤:', error)
         this.error = error instanceof Error ? error.message : '操作失敗'
       }
     }

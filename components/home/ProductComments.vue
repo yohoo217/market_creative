@@ -116,24 +116,34 @@ const newComment = ref('')
 const newRating = ref(5)
 
 onMounted(async () => {
-  const productId = route.params.id as string
-  await commentStore.fetchComments(productId)
+  const productId = route.params?.id
+  if (!productId) {
+    console.error('No product ID found')
+    return
+  }
+  await commentStore.fetchComments(productId.toString())
 })
 
 // 使用 getters 獲取評論數據
 const comments = computed(() => commentStore.getComments)
 const averageRating = computed(() => {
-  const productId = route.params.id as string
-  return commentStore.getAverageRating(productId)
+  const productId = route.params?.id
+  if (!productId) return 0
+  return commentStore.getAverageRating(productId.toString())
 })
 
 // 提交評論
 const submitComment = async () => {
   if (!newComment.value.trim() || !userStore.user) return
+  const productId = route.params?.id
+  if (!productId) {
+    console.error('No product ID found')
+    return
+  }
 
   try {
     await commentStore.addComment({
-      productId: route.params.id as string,
+      productId: productId.toString(),
       userId: userStore.user.id,
       userName: userStore.user.name,
       userAvatar: userStore.user.avatar || '/default-avatar.png',

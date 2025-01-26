@@ -37,12 +37,25 @@ export const useEngineerStore = defineStore('engineer', {
   actions: {
     async fetchEngineers() {
       this.loading = true
+      this.error = null
+      
       try {
         const response = await fetch('/api/engineers')
-        const data = await response.json()
-        this.engineers = data
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || '獲取工程師資料失敗')
+        }
+
+        if (result.success && Array.isArray(result.data)) {
+          this.engineers = result.data
+        } else {
+          throw new Error('無效的工程師資料格式')
+        }
       } catch (error) {
+        console.error('獲取工程師資料錯誤:', error)
         this.error = error instanceof Error ? error.message : '獲取工程師資料失敗'
+        this.engineers = []
       } finally {
         this.loading = false
       }
@@ -57,13 +70,25 @@ export const useEngineerStore = defineStore('engineer', {
           },
           body: JSON.stringify(engineerData),
         })
-        const data = await response.json()
-        const index = this.engineers.findIndex(e => e.id === engineerData.id)
-        if (index !== -1) {
-          this.engineers[index] = { ...this.engineers[index], ...data }
+        
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || '更新工程師資料失敗')
+        }
+
+        if (result.success) {
+          const index = this.engineers.findIndex(e => e.id === engineerData.id)
+          if (index !== -1) {
+            this.engineers[index] = { ...this.engineers[index], ...result.data }
+          }
+        } else {
+          throw new Error('無效的工程師資料格式')
         }
       } catch (error) {
+        console.error('更新工程師資料錯誤:', error)
         this.error = error instanceof Error ? error.message : '更新工程師資料失敗'
+        throw error
       }
     }
   }
