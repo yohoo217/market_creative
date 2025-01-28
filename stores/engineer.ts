@@ -1,15 +1,19 @@
 import { defineStore } from 'pinia'
+import { UserRole } from '~/server/models/User'
 
 export interface Engineer {
   id: string
   name: string
   avatar: string
   specialties: string[]
-  experience: number
+  description: string
   rating: number
-  hourlyRate: number
+  isVerified: boolean
   completedProjects: number
-  availability: boolean
+  subscription: {
+    plan: string
+    expiredAt?: Date
+  }
 }
 
 export const useEngineerStore = defineStore('engineer', {
@@ -23,9 +27,6 @@ export const useEngineerStore = defineStore('engineer', {
     getEngineers: (state) => state.engineers,
     getEngineerById: (state) => (id: string) => {
       return state.engineers.find(engineer => engineer.id === id)
-    },
-    getAvailableEngineers: (state) => {
-      return state.engineers.filter(engineer => engineer.availability)
     },
     getTopEngineers: (state) => {
       return state.engineers
@@ -44,17 +45,17 @@ export const useEngineerStore = defineStore('engineer', {
         const result = await response.json()
 
         if (!response.ok) {
-          throw new Error(result.message || '獲取工程師資料失敗')
+          throw new Error(result.message || '獲取工程師列表失敗')
         }
 
-        if (result.success && Array.isArray(result.data)) {
-          this.engineers = result.data
+        if (Array.isArray(result)) {
+          this.engineers = result
         } else {
-          throw new Error('無效的工程師資料格式')
+          throw new Error('無效的工程師數據格式')
         }
       } catch (error) {
-        console.error('獲取工程師資料錯誤:', error)
-        this.error = error instanceof Error ? error.message : '獲取工程師資料失敗'
+        console.error('獲取工程師列表錯誤:', error)
+        this.error = error instanceof Error ? error.message : '獲取工程師列表失敗'
         this.engineers = []
       } finally {
         this.loading = false
@@ -64,30 +65,19 @@ export const useEngineerStore = defineStore('engineer', {
     async updateEngineer(engineerData: Partial<Engineer> & { id: string }) {
       try {
         const response = await fetch(`/api/engineers/${engineerData.id}`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(engineerData),
         })
-        
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.message || '更新工程師資料失敗')
-        }
-
-        if (result.success) {
-          const index = this.engineers.findIndex(e => e.id === engineerData.id)
-          if (index !== -1) {
-            this.engineers[index] = { ...this.engineers[index], ...result.data }
-          }
-        } else {
-          throw new Error('無效的工程師資料格式')
+        const data = await response.json()
+        const index = this.engineers.findIndex(e => e.id === engineerData.id)
+        if (index !== -1) {
+          this.engineers[index] = { ...this.engineers[index], ...data }
         }
       } catch (error) {
         console.error('更新工程師資料錯誤:', error)
-        this.error = error instanceof Error ? error.message : '更新工程師資料失敗'
         throw error
       }
     }

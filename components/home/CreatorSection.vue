@@ -1,152 +1,236 @@
 <template>
   <div class="creator-section">
-    <!-- 載入狀態 -->
-    <div v-if="creatorStore.loading || workStore.loading" 
-         class="flex justify-center items-center py-8">
-      <i class="pi pi-spinner animate-spin text-4xl text-primary-500"></i>
+    <div
+      v-if="workStore.loading"
+      class="flex justify-center items-center min-h-[200px]"
+    >
+      <ProgressSpinner />
     </div>
 
-    <!-- 錯誤提示 -->
-    <div v-else-if="creatorStore.error || workStore.error" 
-         class="text-center py-8 text-red-500">
-      {{ creatorStore.error || workStore.error }}
+    <div
+      v-else-if="workStore.error"
+      class="text-red-500 text-center min-h-[200px] flex items-center justify-center"
+    >
+      {{ workStore.error }}
     </div>
 
-    <template v-else>
-      <!-- 創作者輪播展示 -->
-      <div class="featured-creators mb-8">
-        <Carousel
-          :value="creators"
-          :numVisible="4"
-          :numScroll="1"
-          :circular="true"
-          :autoplayInterval="5000"
-        >
-          <template #item="{ data: creator }">
-            <div class="creator-card p-4">
-              <div class="relative w-full pb-[100%] mb-4 overflow-hidden rounded-lg">
-                <img
-                  :src="creator.avatar"
-                  :alt="creator.name"
-                  class="absolute inset-0 w-full h-full object-contain hover:scale-110 transition-transform duration-300"
-                />
-              </div>
-              <h3 class="text-lg font-semibold mb-2">{{ creator.name }}</h3>
-              <p class="text-sm text-gray-600 mb-2">{{ Array.isArray(creator.skills) ? creator.skills.join(', ') : '暫無技能' }}</p>
-              <div class="flex items-center mb-3">
-                <i class="pi pi-star-fill text-yellow-400 mr-1"></i>
-                <span class="text-sm">{{ creator.rating }}</span>
-                <span class="text-sm text-gray-500 ml-2">({{ creator.completedProjects }} 個專案)</span>
-              </div>
-              <div class="flex gap-2">
-                <Button
-                  label="查看作品"
-                  class="p-button-outlined p-button-sm"
-                  @click="viewCreator(creator.id)"
-                />
-                <Button
-                  :icon="creator.isFollowed ? 'pi pi-heart-fill' : 'pi pi-heart'"
-                  :class="[
-                    'p-button-rounded p-button-sm',
-                    creator.isFollowed ? 'p-button-primary' : 'p-button-text'
-                  ]"
-                  :data-creator-id="creator.id"
-                  @click="toggleFollow(creator.id)"
-                />
-              </div>
-            </div>
-          </template>
-        </Carousel>
-      </div>
-
-      <!-- 熱門作品展示 -->
-      <div class="popular-works grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
-          v-for="work in popularWorks"
-          :key="work.id"
-          class="work-card group relative overflow-hidden rounded-lg cursor-pointer"
-          @click="viewWork(work.id)"
-        >
-          <img
-            :src="work.image"
-            :alt="work.title"
-            class="w-full object-contain"
-          />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
-              <h4 class="text-lg font-semibold mb-1">{{ work.title }}</h4>
-              <p class="text-sm opacity-90">{{ work.creatorName }}</p>
-              <div class="flex items-center mt-2">
-                <span class="flex items-center mr-4">
-                  <i class="pi pi-eye mr-1"></i>
-                  {{ work.views }}
-                </span>
-                <span class="flex items-center">
-                  <i class="pi pi-heart-fill mr-1"></i>
-                  {{ work.likes }}
-                </span>
+    <div v-else>
+      <!-- IDEATOR作品展示 -->
+      <div class="mb-8">
+        <h3 class="text-xl font-semibold mb-4">熱門創作者作品</h3>
+        <div class="relative">
+          <button 
+            @click="ideatorCurrentPage > 0 && ideatorCurrentPage--"
+            class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md"
+            :class="{ 'opacity-50 cursor-not-allowed': ideatorCurrentPage === 0 }"
+          >
+            <i class="pi pi-chevron-left text-xl"></i>
+          </button>
+          <div class="overflow-hidden">
+            <div 
+              class="flex transition-transform duration-300 ease-in-out"
+              :style="{ transform: `translateX(-${ideatorCurrentPage * 100}%)` }"
+            >
+              <div
+                v-for="work in ideatorWorks"
+                :key="work._id"
+                class="w-full sm:w-1/2 lg:w-1/3 flex-shrink-0 px-3"
+              >
+                <div class="work-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  <img
+                    :src="work.image"
+                    :alt="work.title"
+                    class="w-full h-48 object-cover"
+                  />
+                  <div class="p-4">
+                    <h4 class="text-lg font-semibold mb-2 line-clamp-1">{{ work.title }}</h4>
+                    <p class="text-sm text-gray-600 mb-2 line-clamp-2">{{ work.description }}</p>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center">
+                        <Rating
+                          :modelValue="work.rating || 0"
+                          readonly
+                          :cancel="false"
+                        />
+                        <span class="ml-2 text-sm text-gray-500"
+                          >({{ work.comments?.length || 0 }})</span
+                        >
+                      </div>
+                      <span class="text-sm text-gray-500">{{ work.user?.name }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+          <button 
+            @click="ideatorCurrentPage < maxIdeatorPage && ideatorCurrentPage++"
+            class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md"
+            :class="{ 'opacity-50 cursor-not-allowed': ideatorCurrentPage === maxIdeatorPage }"
+          >
+            <i class="pi pi-chevron-right text-xl"></i>
+          </button>
         </div>
       </div>
-    </template>
+
+      <!-- ENGINEER作品展示 -->
+      <div>
+        <h3 class="text-xl font-semibold mb-4">工程師作品</h3>
+        <div class="relative">
+          <button 
+            @click="engineerCurrentPage > 0 && engineerCurrentPage--"
+            class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md"
+            :class="{ 'opacity-50 cursor-not-allowed': engineerCurrentPage === 0 }"
+          >
+            <i class="pi pi-chevron-left text-xl"></i>
+          </button>
+          <div class="overflow-hidden">
+            <div 
+              class="flex transition-transform duration-300 ease-in-out"
+              :style="{ transform: `translateX(-${engineerCurrentPage * 100}%)` }"
+            >
+              <div
+                v-for="work in engineerWorks"
+                :key="work._id"
+                class="w-full sm:w-1/2 lg:w-1/3 flex-shrink-0 px-3"
+              >
+                <div class="work-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  <img
+                    :src="work.image"
+                    :alt="work.title"
+                    class="w-full h-48 object-cover"
+                  />
+                  <div class="p-4">
+                    <h4 class="text-lg font-semibold mb-2 line-clamp-1">{{ work.title }}</h4>
+                    <p class="text-sm text-gray-600 mb-2 line-clamp-2">{{ work.description }}</p>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center">
+                        <Rating
+                          :modelValue="work.rating || 0"
+                          readonly
+                          :cancel="false"
+                        />
+                        <span class="ml-2 text-sm text-gray-500"
+                          >({{ work.comments?.length || 0 }})</span
+                        >
+                      </div>
+                      <span class="text-sm text-gray-500">{{ work.user?.name }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button 
+            @click="engineerCurrentPage < maxEngineerPage && engineerCurrentPage++"
+            class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md"
+            :class="{ 'opacity-50 cursor-not-allowed': engineerCurrentPage === maxEngineerPage }"
+          >
+            <i class="pi pi-chevron-right text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useCreatorStore } from '~/stores/creator'
-import { useWorkStore } from '~/stores/works'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed } from "vue";
+import { useWorkStore } from "~/stores/works";
+import { UserRole } from "~/server/models/User";
 
-const router = useRouter()
-const creatorStore = useCreatorStore()
-const workStore = useWorkStore()
+interface UserRoleInfo {
+  type: UserRole;
+  isActive: boolean;
+  rating?: number;
+}
+
+interface User {
+  _id: string;
+  name: string;
+  roles: UserRoleInfo[];
+  activeRole: UserRole;
+}
+
+interface Work {
+  _id: string;
+  title: string;
+  description: string;
+  image: string;
+  rating: number;
+  comments?: Array<{
+    id: string;
+    content: string;
+    rating: number;
+  }>;
+  user?: User;
+}
+
+const workStore = useWorkStore();
 
 onMounted(async () => {
-  await Promise.all([
-    creatorStore.fetchCreators(),
-    workStore.fetchWorks()
-  ])
-})
+  await workStore.fetchWorks();
+});
 
-// 使用 store 中的創作者數據
-const creators = computed(() => creatorStore.getCreators)
-const topCreators = computed(() => creatorStore.getTopCreators)
+const ideatorWorks = computed<Work[]>(() => {
+  return workStore.works
+    .filter((work) =>
+      work.user?.roles.some(
+        (role) => role.type === UserRole.IDEATOR && role.isActive
+      )
+    )
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .slice(0, 6);
+});
 
-// 使用 store 中的作品數據
-const popularWorks = computed(() => workStore.getPopularWorks)
+const engineerWorks = computed<Work[]>(() => {
+  return workStore.works
+    .filter((work) =>
+      work.user?.roles.some(
+        (role) => role.type === UserRole.ENGINEER && role.isActive
+      )
+    )
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .slice(0, 6);
+});
 
-// 查看創作者詳情
-const viewCreator = (creatorId: string) => {
-  router.push(`/creators/${creatorId}`)
-}
+const ideatorCurrentPage = ref(0);
+const engineerCurrentPage = ref(0);
 
-// 關注/取消關注創作者
-const toggleFollow = async (creatorId: string) => {
-  const creator = creatorStore.getCreatorById(creatorId)
-  if (creator) {
-    try {
-      await creatorStore.updateCreator({
-        ...creator,
-        id: creatorId,
-        isFollowed: !creator.isFollowed // 切換關注狀態
-      })
-      // 更新按鈕樣式
-      const button = document.querySelector(`[data-creator-id="${creatorId}"]`)
-      if (button) {
-        button.classList.toggle('p-button-filled')
-      }
-    } catch (error) {
-      console.error('Failed to toggle follow:', error)
-    }
-  }
-}
-
-// 查看作品詳情
-const viewWork = (workId: string) => {
-  router.push(`/works/${workId}`)
-}
+const maxIdeatorPage = computed(() => Math.max(0, Math.ceil(ideatorWorks.value.length / 3) - 1));
+const maxEngineerPage = computed(() => Math.max(0, Math.ceil(engineerWorks.value.length / 3) - 1));
 </script>
 
+<style scoped>
+.creator-section {
+  padding: 2rem;
+  background-color: #f8f9fa;
+}
+
+.work-card {
+  transition: transform 0.2s;
+}
+
+.work-card:hover {
+  transform: translateY(-4px);
+}
+
+/* 添加滑動按鈕樣式 */
+button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+button:hover:not(.cursor-not-allowed) {
+  background-color: white;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.transition-transform {
+  transition: transform 0.3s ease-in-out;
+}
+</style>

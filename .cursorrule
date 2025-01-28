@@ -1,5 +1,114 @@
 {
   "description": "Project Structure:\n. \n├── app.vue                 # App entry point\n├── assets/                 # Static assets (CSS, images)\n├── components/             # Vue components\n    ├── common/            # Common/shared components\n    ├── home/             # Home page components\n    └── layout/           # Layout components\n├── layouts/               # Nuxt layouts\n├── pages/                 # Application pages\n├── plugins/               # Nuxt plugins\n├── public/                # Public static files\n├── server/                # Server-side code\n    ├── api/              # API endpoints\n    ├── models/           # Database models\n    └── utils/            # Server utilities\n└── stores/                # Pinia stores",
+  "developmentProgress": {
+    "pages": {
+      "home": {
+        "status": "完成",
+        "components": {
+          "ProductLayout": "已完成基本功能，包含產品展示、評論系統",
+          "IdeaSection": "已完成",
+          "CreatorSection": "已完成，添加左右滑動功能",
+          "QuotationSection": "已完成，優化版面配置和響應式設計",
+          "ProductComments": "已完成評論功能，待添加評論編輯功能"
+        },
+        "features": [
+          "產品展示",
+          "評分系統",
+          "評論功能",
+          "點讚功能",
+          "作品輪播展示",
+          "響應式設計"
+        ]
+      },
+      "admin": {
+        "status": "進行中",
+        "components": {
+          "seed": "已完成基本資料填充功能"
+        },
+        "todo": [
+          "添加產品管理介面",
+          "添加用戶管理功能",
+          "添加數據統計功能"
+        ]
+      },
+      "product": {
+        "status": "進行中",
+        "components": {
+          "detail": "完成基本展示",
+          "crowdfunding": "待開發"
+        }
+      },
+      "user": {
+        "status": "進行中",
+        "components": {
+          "UserManagement": "開發中",
+          "RoleSwitch": "待開發",
+          "SubscriptionPlan": "待開發"
+        },
+        "todo": [
+          "創建用戶管理介面",
+          "實現角色切換功能",
+          "添加權限控制中間件",
+          "更新前端組件以適應新的用戶系統",
+          "添加訂閱方案功能"
+        ],
+        "features": {
+          "userManagement": {
+            "status": "開發中",
+            "components": [
+              "用戶列表",
+              "用戶詳情",
+              "角色管理",
+              "權限設置"
+            ],
+            "pages": [
+              "/admin/users",
+              "/admin/users/[id]",
+              "/admin/roles"
+            ]
+          }
+        }
+      }
+    },
+    "server": {
+      "api": {
+        "status": "進行中",
+        "endpoints": {
+          "/api/products": "已完成 CRUD",
+          "/api/engineers": "已完成基本查詢",
+          "/api/works": "已完成基本查詢，支持分頁和排序",
+          "/api/seed": "已完成，支持批量數據填充"
+        },
+        "todo": [
+          "添加用戶認證",
+          "添加權限控制",
+          "優化錯誤處理",
+          "添加數據緩存"
+        ]
+      },
+      "models": {
+        "status": "已完成基本模型",
+        "implemented": [
+          "Product",
+          "Engineer",
+          "Work"
+        ],
+        "todo": [
+          "User",
+          "Order",
+          "Comment"
+        ]
+      }
+    },
+    "stores": {
+      "status": "進行中",
+      "implemented": {
+        "products": "已完成基本 CRUD",
+        "engineer": "已完成基本查詢",
+        "user": "待完善登錄註冊功能"
+      }
+    }
+  },
   "excludePatterns": [
     "node_modules",
     "dist",
@@ -63,9 +172,96 @@
         "  }",
         "})"
       ]
+    },
+    "mongoose-model": {
+      "prefix": "mgmodel",
+      "body": [
+        "import mongoose from 'mongoose';",
+        "",
+        "export interface I$1 {",
+        "  $2",
+        "}",
+        "",
+        "const $1Schema = new mongoose.Schema<I$1>({",
+        "  $3",
+        "});",
+        "",
+        "export const $1 = mongoose.models.$1 || mongoose.model<I$1>('$1', $1Schema);"
+      ]
     }
   },
   "formatOnSave": true,
   "lintOnSave": true,
-  "typeCheckOnSave": true
+  "typeCheckOnSave": true,
+  "codeQualityRules": {
+    "postEditChecks": [
+      "執行 linter 檢查，修正所有錯誤和警告",
+      "確保所有 import 都被正確使用",
+      "檢查型別定義是否完整"
+    ],
+    "mongooseGuidelines": {
+      "modelDefinition": [
+        "所有 Mongoose 模型定義必須檢查是否已存在",
+        "使用 mongoose.models.ModelName || mongoose.model() 的方式定義",
+        "避免在熱重載時重複定義模型",
+        "每個模型文件都必須導出 interface 和 model",
+        "模型名稱必須與文件名匹配",
+        "使用 PascalCase 命名模型"
+      ],
+      "schemaDefinition": {
+        "types": "確保所有字段都有明確的類型定義",
+        "required": "必要字段要標記 required: true",
+        "defaults": "提供合理的默認值",
+        "references": "使用 ref 正確設置關聯",
+        "indexes": "為常用查詢字段添加索引",
+        "validation": "添加必要的驗證規則",
+        "timestamps": "考慮使用 timestamps 選項"
+      },
+      "modelUsage": [
+        "使用 TypeScript 接口定義模型結構",
+        "導出模型時檢查是否已存在",
+        "中間件使用 function 關鍵字而不是箭頭函數",
+        "虛擬屬性使用 function 關鍵字",
+        "靜態方法使用 function 關鍵字",
+        "實例方法使用 function 關鍵字"
+      ],
+      "hotReloadPrevention": {
+        "checkExisting": "使用 mongoose.models.ModelName 檢查模型是否已存在",
+        "modelExport": "使用 || 運算符確保只創建一次",
+        "schemaOptions": "考慮使用 { collection: 'collectionName' } 選項",
+        "indexDefinition": "使用 schema.index() 而不是在字段定義中設置 index"
+      },
+      "typeScriptIntegration": {
+        "interfaceDefinition": "為每個模型定義完整的 TypeScript 接口",
+        "schemaTypes": "使用 mongoose.Schema<IModel> 確保類型安全",
+        "methodTypes": "為所有方法添加返回類型註解",
+        "middlewareTypes": "為中間件函數添加參數類型",
+        "populateTypes": "使用 ref 時確保引用模型的類型正確"
+      }
+    },
+    "piniaGuidelines": {
+      "storeReuse": [
+        "將共用的 state 和 actions 抽取到基礎 store",
+        "使用 composables 封裝重複的邏輯",
+        "store 之間的共用功能應該提取到 utils 或 composables"
+      ],
+      "storeStructure": {
+        "base": "創建基礎 store 模板，包含共用的 CRUD 操作",
+        "modules": "按功能模組拆分 store",
+        "types": "確保所有 state 都有明確的型別定義"
+      }
+    },
+    "developmentGuidelines": [
+      "使用 TypeScript 嚴格模式",
+      "組件盡可能使用 composition API",
+      "共用邏輯優先使用 composables",
+      "API 調用統一管理，避免在組件中直接調用",
+      "使用 enum 或 const 管理固定值",
+      "確保所有異步操作都有適當的錯誤處理",
+      "組件命名使用 PascalCase",
+      "檔案結構遵循功能模組化原則",
+      "使用 ESLint 和 Prettier 保持代碼風格一致",
+      "重要函數添加 JSDoc 註釋"
+    ]
+  }
 } 

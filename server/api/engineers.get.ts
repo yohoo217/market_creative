@@ -1,36 +1,46 @@
-import { Creator } from '../models/Creator';
+import { User, UserRole } from '../models/User';
+import { defineEventHandler, createError } from 'h3';
+import { Document, Types } from 'mongoose';
+
+interface IEngineerRole {
+    type: UserRole;
+    skills: string[];
+    rating: number;
+    products: string[];
+    subscription: {
+        plan: string;
+        expiredAt?: Date;
+    };
+    isActive: boolean;
+}
 
 export default defineEventHandler(async (event) => {
     try {
-        // 獲取具有特定技能的創作者
-        const creators = await Creator.find({
-            skills: { 
-                $in: ['產品設計', '工業設計', '3D建模', '原型製作', 'UI設計'] 
-            }
-        }).populate('products');
-        
-        // 將創作者數據轉換為工程師格式
-        const engineers = creators.map(creator => ({
-            id: creator._id.toString(),
-            name: creator.name,
-            avatar: creator.avatar || '/user/default-avatar.png',
-            specialties: creator.skills || [],
-            experience: Math.floor(Math.random() * 10) + 1, // 模擬 1-10 年經驗
-            rating: creator.rating || 4.5,
-            hourlyRate: Math.floor(Math.random() * 1000) + 500, // 模擬 500-1500 時薪
-            completedProjects: creator.products?.length || 0,
-            availability: Math.random() > 0.5 // 隨機設置可用性
-        }));
+        const engineers = await User.find({
+            activeRole: UserRole.ENGINEER,
+            'roles.type': UserRole.ENGINEER,
+            'roles.isActive': true
+        });
 
-        return {
-            success: true,
-            data: engineers
-        };
+        return engineers.map((engineer) => {
+            const engineerRole = engineer.roles.find(role => role.type === UserRole.ENGINEER);
+            return {
+                id: engineer._id.toString(),
+                name: engineer.name,
+                avatar: engineer.avatar || '/user/default-avatar.png',
+                specialties: engineerRole?.skills || [],
+                description: engineer.description || '',
+                rating: engineerRole?.rating || 1,
+                isVerified: engineer.isVerified,
+                completedProjects: engineerRole?.products?.length || 0,
+                subscription: engineerRole?.subscription || { plan: 'free' }
+            };
+        });
     } catch (error) {
         console.error('獲取工程師列表錯誤:', error);
-        return {
-            success: false,
+        return createError({
+            statusCode: 500,
             message: '獲取工程師列表失敗'
-        };
+        });
     }
 }); 

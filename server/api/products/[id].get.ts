@@ -1,4 +1,12 @@
 import { Product } from '../../models/Product';
+import { defineEventHandler, createError } from 'h3';
+
+interface Comment {
+    user: string;
+    content: string;
+    rating: number;
+    date: Date;
+}
 
 export default defineEventHandler(async (event) => {
     try {
@@ -10,7 +18,7 @@ export default defineEventHandler(async (event) => {
             });
         }
 
-        const product = await Product.findById(id).populate('creator');
+        const product = await Product.findById(id).populate('user');
         
         if (!product) {
             return createError({
@@ -18,6 +26,11 @@ export default defineEventHandler(async (event) => {
                 message: '找不到該產品'
             });
         }
+
+        // 計算平均評分
+        const averageRating = product.comments.length > 0
+            ? product.comments.reduce((acc: number, comment: Comment) => acc + comment.rating, 0) / product.comments.length
+            : 0;
 
         // 從數據庫獲取的產品數據
         const productData = {
@@ -27,14 +40,18 @@ export default defineEventHandler(async (event) => {
             image: product.image,
             price: product.price,
             category: product.category,
-            rating: product.comments?.reduce((acc, comment) => acc + (comment.rating || 0), 0) / (product.comments?.length || 1),
-            comments: product.comments || [],
+            user: product.user,
+            rating: averageRating,
+            comments: product.comments,
             createdAt: product.createdAt,
-            creator: product.creator,
+            updatedAt: product.updatedAt,
             dimensions: product.dimensions,
             travelDistance: product.travelDistance,
             images: product.images,
-            additionalImages: product.additionalImages
+            additionalImages: product.additionalImages,
+            status: product.status,
+            views: product.views,
+            likes: product.likes
         };
 
         return {

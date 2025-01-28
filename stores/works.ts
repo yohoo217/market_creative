@@ -1,18 +1,40 @@
 import { defineStore } from 'pinia'
+import { UserRole } from '~/server/models/User'
+
+interface Comment {
+  id: string
+  content: string
+  rating: number
+  date: Date
+  likes?: number
+}
+
+interface UserRoleInfo {
+  type: UserRole
+  isActive: boolean
+  rating?: number
+}
+
+interface User {
+  _id: string
+  name: string
+  roles: UserRoleInfo[]
+  activeRole: UserRole
+}
 
 export interface Work {
-  id: string
+  _id: string
   title: string
   description: string
   image: string
-  creatorId: string
-  creatorName: string
   category: string
   price: number
   rating: number
   likes: number
   views: number
   createdAt: string
+  comments?: Comment[]
+  user?: User
 }
 
 export const useWorkStore = defineStore('works', {
@@ -25,10 +47,10 @@ export const useWorkStore = defineStore('works', {
   getters: {
     getWorks: (state) => state.works,
     getWorkById: (state) => (id: string) => {
-      return state.works.find(work => work.id === id)
+      return state.works.find(work => work._id === id)
     },
-    getWorksByCreator: (state) => (creatorId: string) => {
-      return state.works.filter(work => work.creatorId === creatorId)
+    getWorksByUser: (state) => (userId: string) => {
+      return state.works.filter(work => work.user?._id === userId)
     },
     getPopularWorks: (state) => {
       return state.works
@@ -69,14 +91,14 @@ export const useWorkStore = defineStore('works', {
       }
     },
 
-    async fetchWorksByCreator(creatorId: string) {
-      if (!creatorId) return
+    async fetchWorksByCreator(userId: string) {
+      if (!userId) return
 
       this.loading = true
       this.error = null
 
       try {
-        const response = await fetch(`/api/creators/${creatorId}/works`)
+        const response = await fetch(`/api/users/${userId}/works`)
         const result = await response.json()
 
         if (!response.ok) {
@@ -85,7 +107,7 @@ export const useWorkStore = defineStore('works', {
 
         if (result.success && Array.isArray(result.data)) {
           // 更新現有作品列表，保留其他創作者的作品
-          const otherWorks = this.works.filter(w => w.creatorId !== creatorId)
+          const otherWorks = this.works.filter(w => w.user?._id !== userId)
           this.works = [...otherWorks, ...result.data]
         } else {
           throw new Error('無效的作品數據格式')
@@ -99,8 +121,6 @@ export const useWorkStore = defineStore('works', {
     },
 
     async likeWork(workId: string) {
-      if (!workId) return
-
       try {
         const response = await fetch(`/api/works/${workId}/like`, {
           method: 'POST',
@@ -112,7 +132,7 @@ export const useWorkStore = defineStore('works', {
         }
 
         if (result.success) {
-          const index = this.works.findIndex(w => w.id === workId)
+          const index = this.works.findIndex(w => w._id === workId)
           if (index !== -1) {
             this.works[index] = { ...this.works[index], likes: result.data.likes }
           }
@@ -124,8 +144,6 @@ export const useWorkStore = defineStore('works', {
     },
 
     async viewWork(workId: string) {
-      if (!workId) return
-
       try {
         const response = await fetch(`/api/works/${workId}/view`, {
           method: 'POST',
@@ -137,7 +155,7 @@ export const useWorkStore = defineStore('works', {
         }
 
         if (result.success) {
-          const index = this.works.findIndex(w => w.id === workId)
+          const index = this.works.findIndex(w => w._id === workId)
           if (index !== -1) {
             this.works[index] = { ...this.works[index], views: result.data.views }
           }

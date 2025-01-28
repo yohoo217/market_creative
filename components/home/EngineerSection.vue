@@ -13,7 +13,7 @@
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="engineer in availableEngineers" 
+      <div v-for="engineer in engineers" 
            :key="engineer.id" 
            class="bg-white rounded-lg shadow-md p-6">
         <div class="flex items-center space-x-4">
@@ -23,8 +23,8 @@
           <div>
             <h3 class="text-lg font-semibold">{{ engineer.name }}</h3>
             <div class="flex items-center mt-1">
-              <span class="text-yellow-400 mr-1">★</span>
-              <span class="text-gray-600">{{ engineer.rating }}</span>
+              <Rating :modelValue="engineer.rating" readonly :cancel="false" />
+              <span class="text-gray-600 ml-2">{{ engineer.rating }}</span>
             </div>
           </div>
         </div>
@@ -41,14 +41,6 @@
 
         <div class="mt-4 space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-gray-600">經驗</span>
-            <span class="font-medium">{{ engineer.experience }} 年</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">時薪</span>
-            <span class="font-medium">NT$ {{ engineer.hourlyRate }}/hr</span>
-          </div>
-          <div class="flex justify-between text-sm">
             <span class="text-gray-600">完成專案</span>
             <span class="font-medium">{{ engineer.completedProjects }} 個</span>
           </div>
@@ -56,8 +48,8 @@
 
         <div class="mt-6 flex justify-between items-center">
           <span class="text-sm px-3 py-1 rounded-full" 
-                :class="engineer.availability ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-            {{ engineer.availability ? '可接案' : '接案中' }}
+                :class="engineer.isVerified ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+            {{ engineer.isVerified ? '已認證' : '未認證' }}
           </span>
           <button class="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                   @click="contactEngineer(engineer.id)">
@@ -81,8 +73,8 @@ onMounted(async () => {
   await engineerStore.fetchEngineers()
 })
 
-// 使用 getter 獲取可接案的工程師
-const availableEngineers = computed(() => engineerStore.getAvailableEngineers)
+// 使用 getter 獲取所有工程師
+const engineers = computed(() => engineerStore.getEngineers)
 
 // 聯絡工程師
 const contactEngineer = (engineerId: string) => {
