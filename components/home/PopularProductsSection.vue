@@ -2,7 +2,11 @@
   <div>
     <div class="flex justify-between items-center mb-8">
       <h2 class="text-2xl font-bold">熱門作品</h2>
-      <NuxtLink to="/products" class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
+      <NuxtLink 
+        to="/products" 
+        @click="() => navigateToProducts('completed')"
+        class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+      >
         查看全部
       </NuxtLink>
     </div>
@@ -87,6 +91,15 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const navigateToProducts = (status: string) => {
+  router.push({ path: '/products', query: { status } })
+}
+
 interface User {
   _id: string;
   name: string;

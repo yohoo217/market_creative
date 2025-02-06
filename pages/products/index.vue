@@ -37,7 +37,7 @@
               <h3 class="font-semibold text-xl mb-3">{{ product?.name || '' }}</h3>
               <p class="text-gray-600 mb-4">{{ product?.description || '' }}</p>
               <div class="flex justify-between items-center mt-auto">
-                <div class="text-primary-600 font-medium text-lg">${{ formatNumber(product?.price) }}</div>
+                <div class="text-primary-600 font-medium text-lg">{{ displayPrice(product) }}</div>
                 <div class="text-gray-500">{{ formatNumber(product?.views) }} 次瀏覽</div>
               </div>
             </div>
@@ -52,6 +52,8 @@
 </template>
 
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router'
+
 interface Comment {
   _id: string;
   content: string;
@@ -82,6 +84,28 @@ type ProductStatus = 'all' | 'idea' | 'in_progress' | 'fundraising' | 'completed
 
 const currentStatus = ref<ProductStatus>('all')
 
+// 從路由參數獲取初始狀態
+const route = useRoute()
+const initialStatus = computed(() => {
+  const statusParam = route.query.status as ProductStatus
+  return statuses.includes(statusParam) ? statusParam : 'all'
+})
+
+// 監聽狀態變化並更新路由
+const router = useRouter()
+watch(currentStatus, (newStatus) => {
+  if (newStatus === 'all') {
+    router.replace({ query: {} })
+  } else {
+    router.replace({ query: { status: newStatus } })
+  }
+})
+
+// 初始化狀態
+onMounted(() => {
+  currentStatus.value = initialStatus.value
+})
+
 const statusLabels: Record<ProductStatus, string> = {
   all: '全部',
   idea: '創意階段',
@@ -108,7 +132,6 @@ const products = computed(() => {
     return apiResponse.value?.data?.filter(p => 
       p && 
       typeof p === 'object' && 
-      typeof p.price === 'number' &&
       Array.isArray(p.comments)
     ).map(p => ({
       ...p,
@@ -145,5 +168,13 @@ const formatNumber = (num: number | null | undefined) => {
   } catch {
     return '0'
   }
+}
+
+// 修改價格顯示邏輯
+const displayPrice = (product: Product) => {
+  if (product.status === 'idea' || product.status === 'in_progress') {
+    return '尚未定價'
+  }
+  return `$${formatNumber(product.price)}`
 }
 </script> 

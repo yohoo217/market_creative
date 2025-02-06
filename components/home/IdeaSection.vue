@@ -3,7 +3,11 @@
     <!-- 標題和按鈕區域 -->
     <div class="flex justify-between items-center mb-8">
       <h2 class="text-2xl font-bold">最新創意</h2>
-      <NuxtLink to="/products?status=idea" class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
+      <NuxtLink 
+        to="/products" 
+        @click="() => navigateToProducts('idea')"
+        class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+      >
         進入討論區
       </NuxtLink>
     </div>
@@ -71,6 +75,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const navigateToProducts = (status: string) => {
+  router.push({ path: '/products', query: { status } })
+}
 
 interface Product {
   _id: string;

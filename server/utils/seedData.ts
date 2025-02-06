@@ -450,12 +450,11 @@ const mockProducts = [
     },
     {
         name: '智能寵物餵食器',
-        description: '自動化寵物餵食器，支援定時投食、遠程控制、食量監測等功能。',
-        price: 2999,
+        description: '自動化寵物餵食系統，正在開發中。具備定時投食、遠程控制、食量監測等功能。',
         image: '/more_product/smart_feeder.png',
         category: '寵物用品',
         dimensions: '容量 2L，尺寸 30x20x40cm',
-        travelDistance: 'WiFi覆蓋範圍',
+        travelDistance: '預計續航時間 30天',
         images: [
             '/more_product/smart_feeder.png',
             '/picture/feeder1.png'
@@ -463,20 +462,18 @@ const mockProducts = [
         additionalImages: [
             '/picture/feeder2.png'
         ],
-        status: 'fundraising',
-        views: 1200,
-        likes: 345,
-        fundraisingGoal: 300000,
-        currentFunding: 180000
+        status: 'in_progress',
+        views: 580,
+        likes: 145,
+        userEmail: 'engineer2@example.com'
     },
     {
         name: '智能垃圾桶',
-        description: '自動感應開蓋、壓縮垃圾、異味監測的智能垃圾桶，已完成開發。',
-        price: 1999,
+        description: '具有自動開蓋、垃圾分類、滿溢提醒功能的智能垃圾桶，目前處於開發階段。',
         image: '/more_product/smart_bin.png',
         category: '生活用品',
-        dimensions: '容量 50L，高度 60cm',
-        travelDistance: '感應距離 30cm',
+        dimensions: '容量 50L，尺寸 40x30x60cm',
+        travelDistance: '預計電池壽命 6個月',
         images: [
             '/more_product/smart_bin.png',
             '/picture/bin1.png'
@@ -484,18 +481,18 @@ const mockProducts = [
         additionalImages: [
             '/picture/bin2.png'
         ],
-        status: 'completed',
-        views: 950,
-        likes: 278,
-        averageRating: 4.6
+        status: 'in_progress',
+        views: 420,
+        likes: 98,
+        userEmail: 'engineer1@example.com'
     },
     {
-        name: '智能瑜伽墊概念',
-        description: '內建壓力感測器的智能瑜伽墊概念，可分析使用者姿勢並提供即時回饋。',
+        name: '智能瑜伽墊',
+        description: '內建壓力感測器的智能瑜伽墊，可分析使用者姿勢並提供即時回饋，正在進行原型開發。',
         image: '/more_product/smart_yoga.png',
         category: '運動健身',
         dimensions: '尺寸 180x60cm，厚度 5mm',
-        travelDistance: '預計電池續航 30天',
+        travelDistance: '預計充電一次可使用 20小時',
         images: [
             '/more_product/smart_yoga.png',
             '/picture/yoga1.png'
@@ -503,9 +500,10 @@ const mockProducts = [
         additionalImages: [
             '/picture/yoga2.png'
         ],
-        status: 'idea',
+        status: 'in_progress',
         views: 680,
-        likes: 189
+        likes: 234,
+        userEmail: 'engineer3@example.com'
     }
 ];
 

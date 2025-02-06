@@ -23,7 +23,7 @@ const productSchema = new mongoose.Schema({
     price: { 
         type: Number, 
         required: function(this: any) {
-            return this.status !== 'idea';
+            return !['idea', 'in_progress'].includes(this.status);
         }
     },
     image: { type: String, required: true },

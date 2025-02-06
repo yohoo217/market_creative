@@ -83,6 +83,277 @@ _**Assistant**_
 
 ---
 
+_**User**_
+
+請幫我做幾個調正
+1. 產品 status 為 idea 的產品 price 改成空的
+2. 點擊首頁的 “進入討論區” 後會到 http://localhost:3000/products?status=idea
+我想要改成 首頁的 “進入討論區” “查看全部” 都會來到 http://localhost:3000/products 但會跟去來源跳轉至對應的 status 分頁，所以點不同分頁要改變 fliter 查詢參數
+
+---
+
+_**Assistant**_
+
+我來幫您實現這些功能。首先我們需要查看並修改幾個相關文件。
+
+讓我們先看看首頁的相關組件：
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+_**Assistant**_
+
+
+
+現在讓我們修改產品頁面，以實現您的需求：
+
+---
+
+_**Assistant**_
+
+```
+// ... existing code ...
+const currentStatus = ref<ProductStatus>('all')
+
+// 從路由參數獲取初始狀態
+const route = useRoute()
+const initialStatus = computed(() => {
+  const statusParam = route.query.status as ProductStatus
+  return statuses.includes(statusParam) ? statusParam : 'all'
+})
+
+// 監聽狀態變化並更新路由
+const router = useRouter()
+watch(currentStatus, (newStatus) => {
+  if (newStatus === 'all') {
+    router.replace({ query: {} })
+  } else {
+    router.replace({ query: { status: newStatus } })
+  }
+})
+
+// 初始化狀態
+onMounted(() => {
+  currentStatus.value = initialStatus.value
+})
+
+const statusLabels: Record<ProductStatus, string> = {
+// ... existing code ...
+
+const products = computed(() => {
+  try {
+    return apiResponse.value?.data?.filter(p => 
+      p && 
+      typeof p === 'object' && 
+      Array.isArray(p.comments)
+    ).map(p => ({
+      ...p,
+      averageRating: calculateAverageRating(p.comments)
+    })) || []
+  } catch {
+    return []
+  }
+})
+
+// 修改價格顯示邏輯
+const displayPrice = (product: Product) => {
+  if (product.status === 'idea') {
+    return '尚未定價'
+  }
+  return `$${formatNumber(product.price)}`
+}
+
+const calculateAverageRating = (comments: Comment[]) => {
+// ... existing code ...
+```
+
+---
+
+_**Assistant**_
+
+
+
+現在讓我們修改首頁的連結：
+
+---
+
+_**Assistant**_
+
+```
+// ... existing code ...
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-2xl font-bold">熱門作品</h2>
+      <NuxtLink to="/products" class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
+        查看全部
+      </NuxtLink>
+    </div>
+// ... existing code ...
+```
+
+---
+
+_**Assistant**_
+
+
+
+我需要查看更多相關的首頁代碼：
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+_**Assistant**_
+
+
+
+讓我們查看 IdeaSection 組件：
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+_**Assistant**_
+
+
+
+
+
+
+
+現在我們需要修改這些組件：
+
+1. 首先修改 IdeaSection.vue：
+
+---
+
+_**Assistant**_
+
+```
+// ... existing code ...
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-2xl font-bold">最新創意</h2>
+      <NuxtLink 
+        to="/products" 
+        @click="() => navigateToProducts('idea')"
+        class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+      >
+        進入討論區
+      </NuxtLink>
+    </div>
+// ... existing code ...
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const navigateToProducts = (status: string) => {
+  router.push({ path: '/products', query: { status } })
+}
+
+interface Product {
+// ... existing code ...
+```
+
+---
+
+_**Assistant**_
+
+
+
+2. 修改 PopularProductsSection.vue：
+
+---
+
+_**Assistant**_
+
+```
+// ... existing code ...
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-2xl font-bold">熱門作品</h2>
+      <NuxtLink 
+        to="/products" 
+        @click="() => navigateToProducts('completed')"
+        class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+      >
+        查看全部
+      </NuxtLink>
+    </div>
+// ... existing code ...
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const navigateToProducts = (status: string) => {
+  router.push({ path: '/products', query: { status } })
+}
+
+interface User {
+// ... existing code ...
+```
+
+---
+
+_**Assistant**_
+
+
+
+我已經完成了所有需要的修改：
+
+1. 產品狀態為 `idea` 的產品價格顯示：
+   - 在 `products/index.vue` 中添加了 `displayPrice` 函數
+   - 當產品狀態為 `idea` 時顯示"尚未定價"，其他狀態顯示實際價格
+
+2. 路由參數處理：
+   - 在 `products/index.vue` 中添加了路由參數處理邏輯
+   - 從 URL 查詢參數中獲取初始狀態
+   - 當狀態改變時自動更新 URL 查詢參數
+   - 使用 `watch` 監聽狀態變化並更新路由
+
+3. 首頁連結修改：
+   - 修改了 `IdeaSection.vue` 中的"進入討論區"連結
+   - 修改了 `PopularProductsSection.vue` 中的"查看全部"連結
+   - 兩個連結都使用 `router.push` 進行導航，並帶上相應的狀態參數
+
+現在，當用戶：
+1. 點擊首頁的"進入討論區"時，會跳轉到 `/products` 並自動選中 `idea` 狀態
+2. 點擊"查看全部"時，會跳轉到 `/products` 並自動選中 `completed` 狀態
+3. 在產品頁面切換狀態時，URL 會自動更新
+4. 創意階段的產品不會顯示價格，而是顯示"尚未定價"
+
+您可以測試一下這些功能是否符合您的需求。如果需要任何調整，請告訴我。
+
+---
+
+_**User**_
+
+匯入 products 的 seed 資料也要包含 status 為 in_progress 的資料，改過後幫我匯入，且 in_progress 也可以不要有 price
+
+---
+
+_**Assistant**_
+
+
+
+---
+
 
 
 ---
