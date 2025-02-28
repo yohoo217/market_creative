@@ -30,40 +30,50 @@ export default defineEventHandler(async (event) => {
 
         return {
             success: true,
-            data: products.map(product => ({
-                id: product._id.toString(),
-                name: product.name,
-                description: product.description,
-                price: product.price,
-                image: product.image,
-                category: product.category,
-                user: {
-                    id: product.user._id.toString(),
-                    name: product.user.name,
-                    avatar: product.user.avatar
-                },
-                comments: product.comments.map((comment: any) => ({
-                    _id: comment._id.toString(),
-                    content: comment.content,
-                    rating: comment.rating,
-                    date: comment.date,
-                    user: {
-                        _id: comment.user._id.toString(),
-                        name: comment.user.name,
-                        avatar: comment.user.avatar
-                    }
-                })),
-                createdAt: product.createdAt,
-                dimensions: product.dimensions,
-                travelDistance: product.travelDistance,
-                images: product.images,
-                additionalImages: product.additionalImages,
-                status: product.status,
-                views: product.views,
-                likes: product.likes,
-                fundraisingGoal: product.fundraisingGoal,
-                currentFunding: product.currentFunding
-            }))
+            data: products.filter(product => product !== null).map(product => {
+                // 確保product對象存在
+                if (!product) return null;
+                
+                return {
+                    _id: product._id?.toString() || '',
+                    name: product.name || '',
+                    description: product.description || '',
+                    price: product.price || 0,
+                    image: product.image || '',
+                    category: product.category || '',
+                    user: product.user ? {
+                        _id: product.user._id?.toString() || '',
+                        name: product.user.name || '',
+                        avatar: product.user.avatar || ''
+                    } : null,
+                    comments: Array.isArray(product.comments) ? product.comments
+                        .filter((comment: any) => comment !== null)
+                        .map((comment: any) => {
+                            if (!comment) return null;
+                            return {
+                                _id: comment._id?.toString() || '',
+                                content: comment.content || '',
+                                rating: comment.rating || 0,
+                                date: comment.date || new Date(),
+                                user: comment.user ? {
+                                    _id: comment.user._id?.toString() || '',
+                                    name: comment.user.name || '',
+                                    avatar: comment.user.avatar || ''
+                                } : null
+                            };
+                        }).filter(Boolean) : [],
+                    createdAt: product.createdAt || new Date(),
+                    dimensions: product.dimensions || '',
+                    travelDistance: product.travelDistance || '',
+                    images: product.images || [],
+                    additionalImages: product.additionalImages || [],
+                    status: product.status || '',
+                    views: product.views || 0,
+                    likes: product.likes || 0,
+                    targetFunding: product.fundraisingGoal || 0,
+                    currentFunding: product.currentFunding || 0
+                };
+            }).filter(Boolean)
         };
     } catch (error) {
         console.error('獲取產品列表錯誤:', error);

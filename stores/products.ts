@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { Product } from '~/types/product'
 
 interface Comment {
   user: string
@@ -7,54 +8,55 @@ interface Comment {
   date: Date
 }
 
-interface Product {
-  id: string
-  name: string
-  description: string
-  image: string
-  price: number
-  rating?: number
-  dimensions?: string
-  travelDistance?: string
-  images?: string[]
-  additionalImages?: string[]
-  comments?: Comment[]
+interface ProductState {
+  products: Product[]
+  loading: boolean
+  error: string | null
 }
 
 export const useProductStore = defineStore('products', {
-  state: () => ({
-    products: [] as Product[],
+  state: (): ProductState => ({
+    products: [],
     loading: false,
-    error: null as string | null
+    error: null
   }),
 
   getters: {
     getProducts: (state) => state.products,
     getProductById: (state) => (id: string) => {
       return state.products.find(product => product.id === id)
+    },
+    getProductsByCategory: (state) => (category: string) => {
+      return state.products.filter(product => product.category === category)
+    },
+    getProductsByStatus: (state) => (status: string) => {
+      return state.products.filter(product => product.status === status)
+    },
+    getFeaturedProducts: (state) => {
+      return state.products
+        .filter(product => product.status === 'completed')
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 6)
+    },
+    getPopularProducts: (state) => {
+      return state.products
+        .sort((a, b) => b.likes - a.likes)
+        .slice(0, 6)
     }
   },
 
   actions: {
     async fetchProducts() {
+      const api = useApi()
       this.loading = true
       this.error = null
       
       try {
-        const response = await fetch('/api/products')
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.message || '獲取產品列表失敗')
-        }
-
-        if (result.success && Array.isArray(result.data)) {
-          this.products = result.data
-        } else {
-          throw new Error('無效的產品數據格式')
+        const response = await api.get<Product[]>('/api/products')
+        if (response.success) {
+          this.products = response.data
         }
       } catch (error) {
-        console.error('獲取產品列表錯誤:', error)
         this.error = error instanceof Error ? error.message : '獲取產品列表失敗'
         this.products = []
       } finally {
@@ -65,84 +67,141 @@ export const useProductStore = defineStore('products', {
     async fetchProduct(id: string) {
       if (!id) return
 
+      const api = useApi()
       this.loading = true
       this.error = null
 
       try {
-        const response = await fetch(`/api/products/${id}`)
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.message || '獲取產品失敗')
-        }
-
-        if (result.success) {
+        const response = await api.get<Product>(`/api/products/${id}`)
+        if (response.success) {
           const index = this.products.findIndex(p => p.id === id)
           if (index !== -1) {
-            this.products[index] = result.data
+            this.products[index] = response.data
           } else {
-            this.products.push(result.data)
+            this.products.push(response.data)
           }
-        } else {
-          throw new Error('無效的產品數據格式')
         }
       } catch (error) {
-        console.error('獲取產品錯誤:', error)
         this.error = error instanceof Error ? error.message : '獲取產品失敗'
       } finally {
         this.loading = false
       }
     },
 
-    addProduct(product: Product) {
-      const index = this.products.findIndex(p => p.id === product.id)
-      if (index !== -1) {
-        this.products[index] = product
-      } else {
-        this.products.push(product)
-      }
-    },
+    async createProduct(product: Omit<Product, 'id'>) {
+      const api = useApi()
+      this.loading = true
+      this.error = null
 
-    updateProduct(updatedProduct: Product) {
-      const index = this.products.findIndex(p => p.id === updatedProduct.id)
-      if (index !== -1) {
-        this.products[index] = updatedProduct
-      }
-    },
-
-    deleteProduct(id: string) {
-      this.products = this.products.filter(p => p.id !== id)
-    },
-
-    async addProductComment(productId: string, comment: Comment) {
       try {
-        const response = await fetch(`/api/products/${productId}/comments`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(comment),
-        })
-
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.message || '添加評論失敗')
+        const response = await api.post<Product>('/api/products', product)
+        if (response.success) {
+          this.products.push(response.data)
         }
-
-        if (result.success) {
-          const product = this.products.find(p => p.id === productId)
-          if (product) {
-            product.comments = product.comments || []
-            product.comments.push(comment)
-          }
-        } else {
-          throw new Error('無效的評論數據格式')
-        }
+        return response.data
       } catch (error) {
-        console.error('添加評論錯誤:', error)
+        this.error = error instanceof Error ? error.message : '創建產品失敗'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async updateProduct(id: string, updates: Partial<Product>) {
+      const api = useApi()
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await api.patch<Product>(`/api/products/${id}`, updates)
+        if (response.success) {
+          const index = this.products.findIndex(p => p.id === id)
+          if (index !== -1) {
+            this.products[index] = { ...this.products[index], ...response.data }
+          }
+        }
+        return response.data
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : '更新產品失敗'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async deleteProduct(id: string) {
+      const api = useApi()
+      this.loading = true
+      this.error = null
+
+      try {
+        await api.delete(`/api/products/${id}`)
+        this.products = this.products.filter(p => p.id !== id)
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : '刪除產品失敗'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async addComment(productId: string, comment: Omit<Comment, 'id' | 'date'>) {
+      const api = useApi()
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await api.post<Product>(
+          `/api/products/${productId}/comments`,
+          comment
+        )
+        if (response.success) {
+          const index = this.products.findIndex(p => p.id === productId)
+          if (index !== -1) {
+            this.products[index] = response.data
+          }
+        }
+        return response.data
+      } catch (error) {
         this.error = error instanceof Error ? error.message : '添加評論失敗'
         throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async likeProduct(productId: string) {
+      const api = useApi()
+      this.error = null
+
+      try {
+        const response = await api.post<Product>(`/api/products/${productId}/like`)
+        if (response.success) {
+          const index = this.products.findIndex(p => p.id === productId)
+          if (index !== -1) {
+            this.products[index] = response.data
+          }
+        }
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : '點讚失敗'
+        throw error
+      }
+    },
+
+    async viewProduct(productId: string) {
+      const api = useApi()
+      this.error = null
+
+      try {
+        const response = await api.post<Product>(`/api/products/${productId}/view`)
+        if (response.success) {
+          const index = this.products.findIndex(p => p.id === productId)
+          if (index !== -1) {
+            this.products[index] = response.data
+          }
+        }
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : '記錄瀏覽失敗'
       }
     }
   }

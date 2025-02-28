@@ -93,8 +93,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '~/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const navigateToProducts = (status: string) => {
   router.push({ path: '/products', query: { status } })

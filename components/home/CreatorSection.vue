@@ -79,7 +79,7 @@
         <div class="relative">
           <button 
             @click="engineerCurrentPage > 0 && engineerCurrentPage--"
-            class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md"
+            class="left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-md"
             :class="{ 'opacity-50 cursor-not-allowed': engineerCurrentPage === 0 }"
           >
             <i class="pi pi-chevron-left text-xl"></i>

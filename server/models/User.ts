@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 // 定義角色類型
 export enum UserRole {
@@ -10,30 +11,30 @@ export enum UserRole {
 }
 
 // 定義用戶數據接口
+export interface IUserRole {
+    type: UserRole;
+    isActive: boolean;
+    subscription?: {
+        plan: string;
+        expiredAt: Date;
+    };
+    rating?: number;
+    skills?: string[];
+}
+
 export interface IUser {
+    name: string;
     email: string;
     password?: string;  // 使密碼欄位可選
-    name: string;
-    avatar: string;
-    description: string;
-    roles: Array<{
-        type: UserRole;
-        isActive: boolean;
-        subscription?: {
-            plan: string;
-            expiredAt?: Date;
-        };
-        skills?: string[];
-        products?: mongoose.Types.ObjectId[];
-        ideas?: mongoose.Types.ObjectId[];
-        rating?: number;
-        createdAt: Date;
-    }>;
+    avatar?: string;
+    description?: string;
+    roles: IUserRole[];
     activeRole: UserRole;
     isVerified: boolean;
     lastLoginAt?: Date;
     createdAt: Date;
     updatedAt: Date;
+    comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 // 定義角色資料結構
@@ -53,34 +54,36 @@ const roleSchema = new mongoose.Schema({
     },
     // 角色特定資料
     skills: [String],                 // 工程師技能
-    products: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],  // 工程師/廠商作品
-    ideas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Idea' }],        // 發想者想法
     rating: { type: Number, default: 0 },  // 工程師/廠商評分
     createdAt: { type: Date, default: Date.now }
 });
 
 // 使用者模型
 const userSchema = new mongoose.Schema<IUser>({
-    email: { 
-        type: String, 
-        required: true, 
-        unique: true 
-    },
-    password: { 
-        type: String, 
-        required: true 
-    },
-    name: { 
-        type: String, 
-        required: true 
-    },
-    avatar: { 
+    name: {
         type: String,
-        default: '/user/default-avatar.jpg'
+        required: true,
+        trim: true
     },
-    description: { 
+    email: {
         type: String,
-        default: '' 
+        required: true,
+        unique: true,
+        trim: true,
+        lowercase: true
+    },
+    password: {
+        type: String,
+        required: true,
+        select: false // 默認不返回密碼
+    },
+    avatar: {
+        type: String,
+        default: '/default-avatar.png'
+    },
+    description: {
+        type: String,
+        default: ''
     },
     roles: [roleSchema],  // 使用者可以有多個角色
     activeRole: {         // 當前啟用的角色
@@ -101,13 +104,47 @@ const userSchema = new mongoose.Schema<IUser>({
         type: Date, 
         default: Date.now 
     }
+}, {
+    timestamps: true
 });
 
-// 更新時間中間件
-userSchema.pre('save', function(next) {
-    this.updatedAt = new Date();
-    next();
+// 密碼加密中間件
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) return next();
+
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password!, salt);
+        next();
+    } catch (error) {
+        next(error as Error);
+    }
 });
+
+// 驗證密碼方法
+userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+    try {
+        if (!this.password) {
+            console.log('密碼字段為空');
+            return false;
+        }
+        
+        // 直接比較密碼，不再重新查詢數據庫
+        const match = await bcrypt.compare(candidatePassword, this.password);
+        console.log(`密碼比較結果: ${match}, 輸入密碼: ${candidatePassword}, 存儲密碼哈希: ${this.password.substring(0, 10)}...`);
+        return match;
+    } catch (error) {
+        console.error('comparePassword錯誤:', error);
+        return false;
+    }
+};
+
+// 移除密碼的 toJSON 方法
+userSchema.methods.toJSON = function() {
+    const obj = this.toObject();
+    delete obj.password;
+    return obj;
+};
 
 // 檢查模型是否已經存在
 let User: mongoose.Model<IUser>;

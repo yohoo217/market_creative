@@ -10,11 +10,32 @@
     padding: 0.5rem 1rem;
     color: #ffffff;
     border-radius: 0.375rem;
+    transition: all 0.2s ease;
 }
 
-.p-button:hover {
+.p-button:enabled:hover {
     background: #0369a1;
     border-color: #0369a1;
+}
+
+.p-button.p-button-outlined {
+    background-color: transparent;
+    color: #0284c7;
+}
+
+.p-button.p-button-outlined:enabled:hover {
+    background: rgba(2, 132, 199, 0.04);
+    color: #0284c7;
+}
+
+.p-button.p-button-danger.p-button-outlined {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.p-button.p-button-danger.p-button-outlined:enabled:hover {
+    background: rgba(239, 68, 68, 0.04);
+    color: #ef4444;
 }
 
 /* Card Styles */
@@ -27,9 +48,73 @@
 .p-inputtext {
     padding: 0.5rem;
     border-radius: 0.375rem;
+    transition: all 0.2s ease;
 }
 
 .p-inputtext:enabled:focus {
     border-color: #0284c7;
     box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25);
+}
+
+.p-inputtext.p-invalid {
+    border-color: #ef4444;
+}
+
+.p-inputtext.p-invalid:enabled:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+}
+
+/* Dialog Styles */
+.p-dialog {
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.p-dialog .p-dialog-header {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    padding: 1.5rem;
+    background: #ffffff;
+    color: #111827;
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.p-dialog .p-dialog-content {
+    padding: 1.5rem;
+    background: #ffffff;
+}
+
+.p-dialog .p-dialog-footer {
+    padding: 1rem 1.5rem;
+    background: #ffffff;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* Password Input Styles */
+.p-password {
+    width: 100%;
+}
+
+.p-password-input {
+    width: 100%;
+}
+
+/* Avatar Styles */
+.p-avatar {
+    background-color: #e5e7eb;
+    color: #4b5563;
+}
+
+.p-avatar.p-avatar-circle {
+    border-radius: 9999px;
+}
+
+/* Dialog Mask */
+.p-dialog-mask {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.4);
 }

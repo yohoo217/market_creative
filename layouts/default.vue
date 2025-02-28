@@ -5,21 +5,101 @@
         <div class="flex justify-between items-center">
           <NuxtLink to="/" class="text-2xl font-bold text-primary-600">創意市集</NuxtLink>
           <div class="flex items-center space-x-4">
-            <NuxtLink to="/products" class="text-gray-600 hover:text-primary-600">商品</NuxtLink>
-            <NuxtLink to="/crowdfunding" class="text-gray-600 hover:text-primary-600">募資</NuxtLink>
+            <NuxtLink to="/products" class="text-gray-600 hover:text-primary-600">創意庫</NuxtLink>
+            <NuxtLink to="/crowdfunding" class="text-gray-600 hover:text-primary-600">募資專案</NuxtLink>
+            
+            <!-- 登入前顯示登入按鈕 -->
             <Button v-if="!isLoggedIn" 
                     label="登入/註冊" 
                     class="p-button-outlined" 
                     @click="openLoginDialog" />
+            
+            <!-- 登入後顯示用戶選項 -->
             <div v-else class="flex items-center space-x-2">
-              <Avatar :image="currentUser?.avatar || '/default-avatar.png'"
-                      :label="currentUser?.name?.charAt(0)"
-                      shape="circle"
-                      size="normal" />
-              <span class="text-gray-600">{{ currentUser?.name }}</span>
-              <Button label="登出" 
-                      class="p-button-outlined p-button-danger" 
-                      @click="handleLogout" />
+              <!-- 角色特定選單 -->
+              <div class="flex space-x-4 pr-4 border-r border-gray-200">
+                <!-- 消息中心入口 -->
+                <NuxtLink 
+                  to="/messages" 
+                  class="text-gray-600 hover:text-primary-600 flex items-center"
+                >
+                  <i class="pi pi-envelope mr-1"></i>
+                  消息中心
+                </NuxtLink>
+                
+                <!-- 創意者選單 -->
+                <NuxtLink 
+                  v-if="hasRole(UserRole.IDEATOR)" 
+                  to="/products/my-ideas" 
+                  class="text-green-600 hover:text-green-800"
+                >
+                  我的創意
+                </NuxtLink>
+                
+                <!-- 工程師選單 -->
+                <NuxtLink 
+                  v-if="hasRole(UserRole.ENGINEER)" 
+                  to="/proposals/my-proposals" 
+                  class="text-blue-600 hover:text-blue-800"
+                >
+                  我的提案
+                </NuxtLink>
+                
+                <!-- 廠商選單 -->
+                <NuxtLink 
+                  v-if="hasRole(UserRole.VENDOR)" 
+                  to="/matchmaking" 
+                  class="text-purple-600 hover:text-purple-800"
+                >
+                  媒合中心
+                </NuxtLink>
+              </div>
+              
+              <!-- 用戶資訊與選單 -->
+              <Dropdown v-model="selectedRole" 
+                        :options="availableRoles" 
+                        optionLabel="label" 
+                        optionValue="value"
+                        placeholder="切換角色"
+                        class="w-32"
+                        @change="handleRoleChange" />
+              
+              <div class="relative user-menu-container flex items-center">
+                <div class="flex items-center cursor-pointer" @click="toggleUserMenu">
+                  <Avatar :image="currentUser?.avatar || '/images/default-avatar.png'"
+                          :label="currentUser?.name || '創'"
+                          class="cursor-pointer"
+                          shape="circle"
+                          size="normal" />
+                  
+                  <!-- 用戶姓名顯示 -->
+                  <span class="ml-2 hidden md:inline-block text-gray-700">
+                    {{ currentUser?.name || '創意用戶' }}
+                  </span>
+                  
+                  <!-- 下拉箭頭 -->
+                  <i class="pi pi-chevron-down ml-1 text-gray-500 text-xs"></i>
+                </div>
+                        
+                <!-- 用戶下拉選單 -->
+                <div v-if="showUserMenu" 
+                     class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+                     style="top: 100%;">
+                  <div class="px-4 py-2 border-b border-gray-100">
+                    <div class="font-medium text-ellipsis overflow-hidden">{{ currentUser?.name || '創意用戶' }}</div>
+                    <div class="text-sm text-gray-500">
+                      當前角色: {{ roleLabels[currentUser?.activeRole || 'visitor'] }}
+                    </div>
+                  </div>
+                  <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    個人資料
+                  </NuxtLink>
+                  <button @click="handleLogout" 
+                          class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                    登出
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -82,18 +162,48 @@
 
         <form class="space-y-4" @submit.prevent="handleSubmit" @keydown="handleKeydown">
           <!-- 註冊時的名稱欄位 -->
-          <div v-if="!isLoginMode" class="flex flex-col">
-            <label for="name" class="mb-1 text-gray-700 text-sm font-medium">
-              用戶名
-              <span class="text-gray-400 text-xs ml-1">(2-20個字符，可包含中文、英文、數字和底線)</span>
-            </label>
-            <InputText id="name" 
-                      v-model="form.name" 
-                      type="text"
-                      class="w-full"
-                      :class="{ 'p-invalid': formError && !isLoginMode && !form.name }"
-                      @focus="clearError"
-                      maxlength="20" />
+          <div v-if="!isLoginMode" class="flex flex-col space-y-4">
+            <!-- 頭像上傳 -->
+            <div class="flex flex-col">
+              <label class="mb-1 text-gray-700 text-sm font-medium">頭像</label>
+              <div class="flex items-center space-x-4">
+                <div class="relative w-20 h-20 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
+                  <img v-if="form.avatarPreview" 
+                       :src="form.avatarPreview" 
+                       class="w-full h-full object-cover" 
+                       alt="頭像預覽" />
+                  <div v-else 
+                       class="w-full h-full flex items-center justify-center text-gray-400">
+                    <i class="pi pi-user text-3xl"></i>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <FileUpload mode="basic" 
+                              :auto="true"
+                              accept="image/*"
+                              :maxFileSize="5000000"
+                              @select="onAvatarSelect"
+                              @error="onAvatarError"
+                              chooseLabel="選擇圖片"
+                              class="avatar-upload" />
+                  <p class="text-xs text-gray-500 mt-1">支持 jpg、png 格式，檔案大小不超過 5MB</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col">
+              <label for="name" class="mb-1 text-gray-700 text-sm font-medium">
+                用戶名
+                <span class="text-gray-400 text-xs ml-1">(2-20個字符，可包含中文、英文、數字和底線)</span>
+              </label>
+              <InputText id="name" 
+                        v-model="form.name" 
+                        type="text"
+                        class="w-full"
+                        :class="{ 'p-invalid': formError && !isLoginMode && !form.name }"
+                        @focus="clearError"
+                        maxlength="20" />
+            </div>
           </div>
 
           <!-- 電子郵件 -->
@@ -203,10 +313,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, nextTick, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onUnmounted, onMounted } from 'vue'
 import { useUserStore } from '~/stores/user'
 import { useToast } from 'primevue/usetoast'
 import { storeToRefs } from 'pinia'
+import { UserRole } from '~/server/models/User'
+import { useAuth } from '~/composables/useAuth'
+import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const { isLoggedIn, currentUser } = storeToRefs(userStore)
@@ -215,6 +328,8 @@ const isLoading = ref(false)
 const isLoginMode = ref(true)
 const formError = ref('')
 const toast = useToast()
+const config = useRuntimeConfig()
+const router = useRouter()
 
 const form = reactive<any>({
   name: '',
@@ -222,7 +337,9 @@ const form = reactive<any>({
   password: '',
   confirmPassword: '',
   showPassword: false,
-  showConfirmPassword: false
+  showConfirmPassword: false,
+  avatar: null as File | null,
+  avatarPreview: ''
 })
 
 // 密碼規則檢查
@@ -398,7 +515,16 @@ const handleSubmit = async () => {
         group: 'auth'
       });
     } else {
-      await userStore.register(form.email, form.password, form.name);
+      // 創建 FormData 對象來處理文件上傳
+      const formData = new FormData();
+      formData.append('email', form.email);
+      formData.append('password', form.password);
+      formData.append('name', form.name);
+      if (form.avatar) {
+        formData.append('avatar', form.avatar);
+      }
+      
+      await userStore.register(formData);
       showLoginDialog.value = false;
       toast.add({ 
         severity: 'success', 
@@ -428,7 +554,9 @@ const resetForm = () => {
     password: '',
     confirmPassword: '',
     showPassword: false,
-    showConfirmPassword: false
+    showConfirmPassword: false,
+    avatar: null,
+    avatarPreview: ''
   });
   formError.value = '';
   isLoading.value = false;
@@ -499,7 +627,10 @@ const openLoginDialog = () => {
 // 登出
 const handleLogout = async () => {
   try {
-    await userStore.logout();
+    // 使用useAuth composable進行登出
+    const auth = useAuth();
+    await auth.logout();
+    
     toast.add({ 
       severity: 'success', 
       summary: '登出成功', 
@@ -507,6 +638,9 @@ const handleLogout = async () => {
       life: 3000,
       group: 'auth'
     });
+    
+    // 移除跳轉到登入頁面的行為，保持在當前頁面
+    showUserMenu.value = false;
   } catch (error) {
     console.error('登出失敗:', error);
     toast.add({ 
@@ -519,9 +653,27 @@ const handleLogout = async () => {
   }
 }
 
+// 用戶選單狀態
+const showUserMenu = ref(false)
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value
+}
+
+// 點擊其他地方關閉用戶選單
+const handleOutsideClick = (e) => {
+  if (showUserMenu.value && !e.target.closest('.user-menu-container')) {
+    showUserMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleOutsideClick)
+})
+
 // 組件卸載時清理
 onUnmounted(() => {
   resetForm();
+  document.removeEventListener('click', handleOutsideClick);
 });
 
 // 監聽模式變化
@@ -529,6 +681,112 @@ watch(isLoginMode, () => {
   resetForm();
   focusFirstInput();
 });
+
+// 角色標籤
+const roleLabels = {
+  visitor: '訪客',
+  ideator: '創意者',
+  engineer: '工程師',
+  vendor: '廠商',
+  admin: '管理員'
+}
+
+// 可用角色下拉選單
+const availableRoles = computed(() => {
+  if (!currentUser.value?.roles) return []
+  
+  return currentUser.value.roles
+    .filter(role => role.isActive)
+    .map(role => ({
+      label: roleLabels[role.type],
+      value: role.type
+    }))
+})
+
+// 當前選擇的角色
+const selectedRole = computed({
+  get: () => currentUser.value?.activeRole,
+  set: (value) => {} // 實際變更由 handleRoleChange 處理
+})
+
+// 處理角色變更
+const handleRoleChange = async (event) => {
+  try {
+    const newRole = event.value
+    // TODO: 實現角色切換API調用
+    toast.add({
+      severity: 'success',
+      summary: '角色已切換',
+      detail: `您已切換為${roleLabels[newRole]}`,
+      life: 3000
+    })
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: '角色切換失敗',
+      detail: error.message || '無法切換角色',
+      life: 3000
+    })
+  }
+}
+
+// 角色檢查函數
+const hasRole = (role) => {
+  return userStore.hasRole(role)
+}
+
+// 處理頭像選擇
+const onAvatarSelect = (event: any) => {
+  const file = event.files[0];
+  if (file) {
+    // 檢查文件類型
+    if (!file.type.startsWith('image/')) {
+      toast.add({
+        severity: 'error',
+        summary: '上傳失敗',
+        detail: '請選擇圖片文件',
+        life: 3000,
+        group: 'auth'
+      });
+      return;
+    }
+    
+    // 檢查文件大小（5MB）
+    if (file.size > 5000000) {
+      toast.add({
+        severity: 'error',
+        summary: '上傳失敗',
+        detail: '圖片大小不能超過 5MB',
+        life: 3000,
+        group: 'auth'
+      });
+      return;
+    }
+
+    // 創建預覽
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      form.avatarPreview = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    form.avatar = file;
+  }
+}
+
+// 處理頭像上傳錯誤
+const onAvatarError = (error: any) => {
+  let errorMessage = '上傳失敗';
+  if (error.type === 'max-file-size') {
+    errorMessage = '圖片大小不能超過 5MB';
+  }
+  toast.add({
+    severity: 'error',
+    summary: '上傳失敗',
+    detail: errorMessage,
+    life: 3000,
+    group: 'auth'
+  });
+}
 </script>
 
 <style scoped>
@@ -604,5 +862,66 @@ watch(isLoginMode, () => {
 /* 按鈕懸停效果 */
 .auth-dialog :deep(.p-button:not(:disabled):hover) {
   @apply opacity-90;
+}
+
+/* 頭像上傳樣式 */
+.avatar-upload :deep(.p-fileupload-choose) {
+  @apply bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors;
+  @apply px-4 py-2 rounded-md text-sm font-medium;
+  @apply flex items-center justify-center;
+}
+
+.avatar-upload :deep(.p-fileupload-choose:not(.p-disabled):hover) {
+  @apply bg-gray-50 border-gray-400;
+}
+
+.avatar-upload :deep(.p-fileupload-choose .p-button-icon) {
+  @apply mr-2 text-gray-500;
+}
+
+.avatar-upload :deep(.p-fileupload-choose .p-button-label) {
+  @apply font-medium;
+}
+
+.avatar-upload :deep(.p-fileupload-choose:focus) {
+  @apply ring-2 ring-primary-200 border-primary-500;
+}
+
+.user-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.user-menu-container .p-avatar {
+  transition: transform 0.2s;
+}
+
+.user-menu-container .flex:hover .p-avatar {
+  transform: scale(1.05);
+}
+
+.user-menu-container .absolute {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.user-menu-container .flex {
+  transition: all 0.2s;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.user-menu-container .flex:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
         // 從數據庫獲取的產品數據
         const productData = {
-            id: product._id.toString(),
+            _id: product._id.toString(),
             name: product.name,
             description: product.description,
             image: product.image,
@@ -51,7 +51,9 @@ export default defineEventHandler(async (event) => {
             additionalImages: product.additionalImages,
             status: product.status,
             views: product.views,
-            likes: product.likes
+            likes: product.likes,
+            currentFunding: product.currentFunding || 0,
+            targetFunding: product.fundraisingGoal || 0
         };
 
         return {

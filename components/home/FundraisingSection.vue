@@ -2,7 +2,7 @@
   <div>
     <div class="flex justify-between items-center mb-8">
       <h2 class="text-2xl font-bold">火熱募資中產品</h2>
-      <NuxtLink to="/fundraising" class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
+      <NuxtLink to="/crowdfunding" class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors">
         查看全部
       </NuxtLink>
     </div>
@@ -37,9 +37,11 @@
                 <span class="text-gray-500">${{ formatNumber(product?.fundraisingGoal) }}</span>
               </div>
             </div>
-            <button class="w-full bg-primary-500 text-white py-2 rounded-lg hover:bg-primary-600 transition-colors">
-              支持專案
-            </button>
+            <NuxtLink :to="`/crowdfunding/${product.id}`" class="block">
+              <button class="w-full bg-primary-500 text-white py-2 rounded-lg hover:bg-primary-600 transition-colors">
+                支持專案
+              </button>
+            </NuxtLink>
           </div>
         </div>
       </div>
@@ -51,6 +53,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '~/stores/user'
+
+const router = useRouter()
+const userStore = useUserStore()
+
 interface Product {
   id: string;
   name: string;
