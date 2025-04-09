@@ -180,6 +180,13 @@ export const useUserStore = defineStore('user', {
     },
 
     /**
+     * 設置當前用戶
+     */
+    setUser(user: any) {
+      this.currentUser = user;
+    },
+
+    /**
      * 登出用戶
      */
     logout: async function() {

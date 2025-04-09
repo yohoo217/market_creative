@@ -58,7 +58,8 @@ interface Product {
   price: number;
   image: string;
   currentFunding: number;
-  fundraisingGoal: number;
+  fundraisingGoal?: number;
+  targetFunding?: number;
   status: string;
 }
 
@@ -80,8 +81,11 @@ const products = computed(() => {
       p && 
       typeof p === 'object' && 
       typeof p.currentFunding === 'number' &&
-      typeof p.fundraisingGoal === 'number'
-    ) || []
+      (typeof p.fundraisingGoal === 'number' || typeof p.targetFunding === 'number')
+    ).map(p => ({
+      ...p,
+      fundraisingGoal: p.fundraisingGoal || p.targetFunding || 0
+    })) || []
   } catch {
     return []
   }

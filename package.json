@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "nuxt dev --host 0.0.0.0",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
@@ -12,9 +12,11 @@
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.12.2",
     "@pinia/nuxt": "^0.8.0",
+    "@prisma/client": "^6.4.1",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/nodemailer": "^6.4.17",
     "@vuelidate/core": "^2.0.3",
     "@vuelidate/validators": "^2.0.4",
     "autoprefixer": "^10.4.20",
@@ -24,17 +26,24 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.12.0",
     "mongoose": "^8.9.5",
+    "nodemailer": "^6.10.0",
     "nuxt": "^3.14.1592",
     "pinia": "^2.2.8",
     "postcss": "^8.4.49",
     "primeicons": "^7.0.0",
     "primevue": "^4.2.4",
+    "prisma": "^6.4.1",
+    "qrcode": "^1.5.4",
+    "speakeasy": "^2.0.0",
     "tailwindcss": "^3.4.16",
     "vue": "latest",
-    "vue-router": "latest"
+    "vue-router": "latest",
+    "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.10",
+    "@types/qrcode": "^1.5.5",
+    "@types/speakeasy": "^2.0.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }

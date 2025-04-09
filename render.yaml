@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: creative-marketplace
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node .output/server/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NITRO_PRESET
+        value: render

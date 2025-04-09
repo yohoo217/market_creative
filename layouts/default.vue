@@ -219,80 +219,48 @@
 
           <!-- 密碼 -->
           <div class="flex flex-col">
-            <div class="flex justify-between items-center mb-1">
-              <label for="password" class="text-gray-700 text-sm font-medium">密碼</label>
-              <button type="button" 
-                      class="text-gray-500 hover:text-gray-700 text-sm flex items-center"
-                      @click="form.showPassword = !form.showPassword">
-                <i :class="[form.showPassword ? 'pi pi-eye-slash' : 'pi pi-eye']" class="text-sm"></i>
-                <span class="ml-1">{{ form.showPassword ? '隱藏' : '顯示' }}</span>
-              </button>
+            <label for="password" class="mb-1 text-gray-700 text-sm font-medium">密碼</label>
+            <InputText id="password" 
+                     v-model="form.password" 
+                     type="password"
+                     class="w-full" 
+                     :class="{ 'p-invalid': formError && !form.password }"
+                     @focus="clearError" />
+            <div class="flex justify-between items-center mt-1">
+              <small v-if="formError && !form.password" class="text-red-500">{{ formError }}</small>
+              <NuxtLink 
+                v-if="isLoginMode"
+                to="/forgot-password" 
+                class="text-sm text-primary-600 hover:text-primary-700"
+                @click="closeDialog"
+              >
+                忘記密碼？
+              </NuxtLink>
             </div>
-            <div class="flex gap-4 items-start">
-              <div class="flex-1 relative">
-                <InputText id="password" 
-                           v-model="form.password" 
-                           :type="form.showPassword ? 'text' : 'password'"
-                           class="w-full" 
-                           :class="{ 'p-invalid': formError && !form.password }"
-                           @focus="clearError" />
-              </div>
-              
-              <!-- 密碼強度指示器 -->
-              <div v-if="!isLoginMode && form.password" class="w-32 flex-shrink-0">
-                <div class="text-xs text-gray-500 mb-1">密碼強度</div>
-                <div class="h-1 rounded-full bg-gray-200 overflow-hidden">
-                  <div class="h-full transition-all duration-300 rounded-full"
-                       :class="{
-                         'bg-red-500': passwordStrength === 'weak',
-                         'bg-yellow-500': passwordStrength === 'medium',
-                         'bg-green-500': passwordStrength === 'strong'
-                       }"
-                       :style="{ width: passwordStrengthPercent + '%' }">
-                  </div>
-                </div>
-                <div class="text-xs mt-1" 
-                     :class="{
-                       'text-red-500': passwordStrength === 'weak',
-                       'text-yellow-500': passwordStrength === 'medium',
-                       'text-green-500': passwordStrength === 'strong'
-                     }">
-                  {{ passwordStrengthText }}
-                </div>
-              </div>
-            </div>
-            
-            <!-- 密碼規則提示 -->
-            <div v-if="!isLoginMode" class="mt-2 space-y-1">
-              <div class="text-sm text-gray-600">密碼必須符合以下規則：</div>
-              <div class="grid grid-cols-2 gap-2">
-                <div v-for="(rule, key) in passwordRules" :key="key"
-                     class="flex items-center text-sm"
-                     :class="rule.valid ? 'text-green-600' : 'text-gray-500'">
-                  <i class="pi" :class="rule.valid ? 'pi-check-circle text-green-500' : 'pi-circle-fill text-gray-300'"></i>
-                  <span class="ml-2">{{ rule.message }}</span>
-                </div>
+          </div>
+
+          <!-- 密碼規則提示 -->
+          <div v-if="!isLoginMode" class="mt-2 space-y-1">
+            <div class="text-sm text-gray-600">密碼必須符合以下規則：</div>
+            <div class="grid grid-cols-2 gap-2">
+              <div v-for="(rule, key) in passwordRules" :key="key"
+                   class="flex items-center text-sm"
+                   :class="rule.valid ? 'text-green-600' : 'text-gray-500'">
+                <i class="pi" :class="rule.valid ? 'pi-check-circle text-green-500' : 'pi-circle-fill text-gray-300'"></i>
+                <span class="ml-2">{{ rule.message }}</span>
               </div>
             </div>
           </div>
 
           <!-- 確認密碼 -->
           <div v-if="!isLoginMode" class="flex flex-col">
-            <div class="flex justify-between items-center mb-1">
-              <label for="confirmPassword" class="text-gray-700 text-sm font-medium">確認密碼</label>
-              <button type="button" 
-                      class="text-gray-500 hover:text-gray-700 text-sm flex items-center"
-                      @click="form.showConfirmPassword = !form.showConfirmPassword">
-                <i :class="[form.showConfirmPassword ? 'pi pi-eye-slash' : 'pi pi-eye']" class="text-sm"></i>
-                <span class="ml-1">{{ form.showConfirmPassword ? '隱藏' : '顯示' }}</span>
-              </button>
-            </div>
+            <label for="confirmPassword" class="mb-1 text-gray-700 text-sm font-medium">確認密碼</label>
             <InputText id="confirmPassword" 
-                       v-model="form.confirmPassword" 
-                       :type="form.showConfirmPassword ? 'text' : 'password'"
-                       class="w-full" 
-                       :class="{ 'p-invalid': formError && !form.confirmPassword }"
-                       @focus="clearError" />
+                     v-model="form.confirmPassword" 
+                     type="password"
+                     class="w-full" 
+                     :class="{ 'p-invalid': formError && !form.confirmPassword }"
+                     @focus="clearError" />
           </div>
         </form>
       </div>
@@ -496,6 +464,30 @@ const handleError = (error: unknown) => {
   formError.value = errorMessage;
 }
 
+interface LoginResponse {
+  success: boolean;
+  user?: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: string;
+    twoFactorEnabled: boolean;
+  };
+  message?: string;
+  requireTwoFactor?: boolean;
+}
+
+interface RegisterResponse {
+  success: boolean;
+  user?: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: string;
+  };
+  message?: string;
+}
+
 const handleSubmit = async () => {
   if (isLoading.value) return;  // 防止重複提交
   if (!validateForm()) return;
@@ -503,17 +495,46 @@ const handleSubmit = async () => {
   try {
     isLoading.value = true;
     formError.value = '';
+    console.log('開始登入/註冊流程:', { 
+      mode: isLoginMode.value ? '登入' : '註冊',
+      email: form.email 
+    });
 
     if (isLoginMode.value) {
-      await userStore.login(form.email, form.password);
-      showLoginDialog.value = false;
-      toast.add({ 
-        severity: 'success', 
-        summary: '登入成功', 
-        detail: '歡迎回來！', 
-        life: 3000,
-        group: 'auth'
+      console.log('嘗試登入...');
+      const response = await $fetch<LoginResponse>('/api/auth/login', {
+        method: 'POST',
+        body: {
+          email: form.email,
+          password: form.password
+        }
       });
+
+      console.log('登入響應:', response);
+
+      if (response.success) {
+        if (response.requireTwoFactor) {
+          console.log('需要 2FA 驗證');
+          showLoginDialog.value = false;
+          router.push({
+            path: '/2fa',
+            query: { email: form.email }
+          });
+        } else if (response.user) {
+          console.log('登入成功，用戶信息:', response.user);
+          await userStore.setUser(response.user);
+          showLoginDialog.value = false;
+          toast.add({ 
+            severity: 'success', 
+            summary: '登入成功', 
+            detail: '歡迎回來！', 
+            life: 3000,
+            group: 'auth'
+          });
+        }
+      } else {
+        throw new Error(response.message || '登入失敗');
+      }
     } else {
       // 創建 FormData 對象來處理文件上傳
       const formData = new FormData();
@@ -534,7 +555,8 @@ const handleSubmit = async () => {
         group: 'auth'
       });
     }
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error('操作失敗:', error);
     handleError(error);
   } finally {
     isLoading.value = false;
@@ -660,11 +682,12 @@ const toggleUserMenu = () => {
 }
 
 // 點擊其他地方關閉用戶選單
-const handleOutsideClick = (e) => {
-  if (showUserMenu.value && !e.target.closest('.user-menu-container')) {
-    showUserMenu.value = false
+const handleOutsideClick = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (showUserMenu.value && !target.closest('.user-menu-container')) {
+    showUserMenu.value = false;
   }
-}
+};
 
 onMounted(() => {
   document.addEventListener('click', handleOutsideClick)
@@ -710,30 +733,31 @@ const selectedRole = computed({
 })
 
 // 處理角色變更
-const handleRoleChange = async (event) => {
+const handleRoleChange = async (event: { value: keyof typeof roleLabels }) => {
   try {
-    const newRole = event.value
-    // TODO: 實現角色切換API調用
+    const newRole = event.value as UserRole;
+    await userStore.switchRole(newRole);
     toast.add({
       severity: 'success',
       summary: '角色已切換',
       detail: `您已切換為${roleLabels[newRole]}`,
       life: 3000
-    })
+    });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '無法切換角色';
     toast.add({
       severity: 'error',
       summary: '角色切換失敗',
-      detail: error.message || '無法切換角色',
+      detail: errorMessage,
       life: 3000
-    })
+    });
   }
-}
+};
 
 // 角色檢查函數
-const hasRole = (role) => {
-  return userStore.hasRole(role)
-}
+const hasRole = (role: UserRole) => {
+  return userStore.hasRole(role);
+};
 
 // 處理頭像選擇
 const onAvatarSelect = (event: any) => {

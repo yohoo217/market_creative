@@ -17,7 +17,7 @@
 
     <template v-else>
       <div v-if="products?.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        <div v-for="product in products" :key="product.id" class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+        <div v-for="product in products" :key="product.id || product._id" class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
           <div class="relative">
             <img :src="product?.image || ''" :alt="product?.name || ''" class="w-full h-48 object-cover rounded-t-lg">
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
@@ -37,7 +37,7 @@
                 <span class="text-gray-500">${{ formatNumber(product?.fundraisingGoal) }}</span>
               </div>
             </div>
-            <NuxtLink :to="`/crowdfunding/${product.id}`" class="block">
+            <NuxtLink :to="`/crowdfunding/${product._id || product.id}`" class="block">
               <button class="w-full bg-primary-500 text-white py-2 rounded-lg hover:bg-primary-600 transition-colors">
                 支持專案
               </button>
@@ -61,13 +61,15 @@ const router = useRouter()
 const userStore = useUserStore()
 
 interface Product {
-  id: string;
+  id?: string;
+  _id?: string;
   name: string;
   description: string;
   price: number;
   image: string;
   currentFunding: number;
   fundraisingGoal: number;
+  targetFunding?: number;
 }
 
 interface ApiResponse {
@@ -89,8 +91,11 @@ const products = computed(() => {
       p && 
       typeof p === 'object' && 
       typeof p.currentFunding === 'number' && 
-      typeof p.fundraisingGoal === 'number'
-    ) || []
+      (typeof p.fundraisingGoal === 'number' || typeof p.targetFunding === 'number')
+    ).map(p => ({
+      ...p,
+      fundraisingGoal: p.fundraisingGoal || p.targetFunding || 0
+    })) || []
   } catch {
     return []
   }

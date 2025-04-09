@@ -420,11 +420,14 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '~/stores/user'
 import { UserRole } from '~/server/models/User'
 import { useToast } from 'primevue/usetoast'
+import { useNuxtApp } from '#app'
+import type { AuthDialog } from '~/plugins/auth-dialog'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const toast = useToast()
+const nuxtApp = useNuxtApp()
 
 // 狀態標籤
 const statusLabels = {
@@ -652,7 +655,7 @@ const sponsorAmount = ref(100)
 const sponsorMessage = ref('')
 const selectedPaymentMethod = ref('')
 const processingPayment = ref(false)
-const lastTransaction = ref<{ transactionId: string, amount: number, date: string } | null>(null)
+const lastTransaction = ref<{ transactionId: string; amount: number; date: string } | null>(null)
 
 // 格式化日期
 const formatDate = (dateStr?: string) => {
@@ -676,11 +679,17 @@ const formatNumber = (num: number | null | undefined) => {
 // 開啟贊助對話框
 const openSponsorDialog = () => {
   if (!userStore.isLoggedIn) {
-    toast.add({ severity: 'info', summary: '請先登入', detail: '您需要登入才能贊助創意', life: 3000 })
-    router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
-    return
+    // 提示用戶需要登入
+    toast.add({ severity: 'info', summary: '請先登入', detail: '您需要登入才能贊助創意', life: 3000 });
+    
+    // 直接重定向到登入頁面
+    console.log('重定向到登入頁面');
+    router.push('/login?redirect=' + encodeURIComponent(route.fullPath));
+    return;
   }
-  sponsorDialogVisible.value = true
+  
+  console.log('用戶已登入，打開贊助對話框');
+  sponsorDialogVisible.value = true;
 }
 
 // 處理贊助流程
@@ -710,7 +719,17 @@ const processSponsor = async () => {
     processingPayment.value = true
     
     // 呼叫贊助 API
-    const { data: response } = await useFetch(`/api/products/${route.params.id}/sponsor`, {
+    interface SponsorResponse {
+      success: boolean;
+      message: string;
+      data: {
+        transactionId: string;
+        amount: number;
+        date: string;
+      };
+    }
+
+    const { data } = await useFetch<SponsorResponse>(`/api/products/${route.params.id}/sponsor`, {
       method: 'POST',
       body: {
         amount: sponsorAmount.value,
@@ -720,9 +739,11 @@ const processSponsor = async () => {
       credentials: 'include'
     })
 
-    if (response.value && response.value.success) {
-      lastTransaction.value = response.value.data
-      sponsorDialogVisible.value = false
+    const response = data.value as SponsorResponse | null;
+    
+    if (response && response.success) {
+      lastTransaction.value = response.data;
+      sponsorDialogVisible.value = false;
       // 顯示成功對話框
       setTimeout(() => {
         sponsorSuccessDialogVisible.value = true
@@ -738,7 +759,7 @@ const processSponsor = async () => {
         await refreshNuxtData()
       }
     } else {
-      throw new Error(response.value?.message || '贊助處理失敗')
+      throw new Error(response?.message || '贊助處理失敗')
     }
   } catch (error: any) {
     console.error('贊助失敗:', error)

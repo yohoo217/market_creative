@@ -3,10 +3,10 @@
     <div class="max-w-md w-full space-y-8">
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          登入帳號
+          註冊新帳號
         </h2>
       </div>
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
+      <form class="mt-8 space-y-6" @submit.prevent="handleRegister">
         <div class="rounded-md shadow-sm -space-y-px">
           <div>
             <label for="email" class="sr-only">電子郵件</label>
@@ -18,6 +18,18 @@
               required
               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
               placeholder="電子郵件"
+            />
+          </div>
+          <div>
+            <label for="name" class="sr-only">名稱</label>
+            <input
+              id="name"
+              v-model="name"
+              name="name"
+              type="text"
+              required
+              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+              placeholder="名稱"
             />
           </div>
           <div>
@@ -37,19 +49,18 @@
         <div>
           <button
             type="submit"
-            :disabled="isLoading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
-            {{ isLoading ? '登入中...' : '登入' }}
+            註冊
           </button>
         </div>
 
         <div class="text-sm text-center">
           <NuxtLink
-            to="/register"
+            to="/login"
             class="font-medium text-primary-600 hover:text-primary-500"
           >
-            還沒有帳號？點此註冊
+            已有帳號？點此登入
           </NuxtLink>
         </div>
       </form>
@@ -58,62 +69,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toastification'
-
 const router = useRouter()
-const toast = useToast()
+const { $toast } = useNuxtApp()
 
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
+const name = ref('')
 
-interface LoginResponse {
-  success: boolean
-  user?: {
-    id: string
-    email: string
-    name: string | null
-    role: string
-    twoFactorEnabled: boolean
-  }
-  requireTwoFactor?: boolean
-}
-
-async function handleLogin() {
+async function handleRegister() {
   try {
-    isLoading.value = true
-    console.log('嘗試登入:', { email: email.value })
-
-    const response = await $fetch<LoginResponse>('/api/auth/login', {
+    const response = await $fetch('/api/auth/register', {
       method: 'POST',
       body: {
         email: email.value,
-        password: password.value
+        password: password.value,
+        name: name.value
       }
     })
 
-    console.log('登入響應:', response)
-
     if (response.success) {
-      if (response.requireTwoFactor) {
-        console.log('需要 2FA 驗證')
-        router.push({
-          path: '/2fa',
-          query: { email: email.value }
-        })
-      } else if (response.user) {
-        console.log('登入成功，用戶信息:', response.user)
-        toast.success('登入成功')
-        router.push('/')
-      }
+      $toast.success('註冊成功')
+      router.push('/login')
     }
   } catch (error: any) {
-    console.error('登入錯誤:', error)
-    toast.error(error.data?.message || '登入失敗')
-  } finally {
-    isLoading.value = false
+    $toast.error(error.data?.message || '註冊失敗')
   }
 }
 </script> 

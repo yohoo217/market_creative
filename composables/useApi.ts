@@ -1,103 +1,257 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import type { Ref, UnwrapRef } from 'vue'
+import type { ApiResponse } from '~/types/api'
 
-interface ApiResponse<T = any> {
-  success: boolean
-  data: T
-  message?: string
+export interface ApiOptions {
+  immediate?: boolean
+  transform?: (data: any) => any
+  onSuccess?: (data: any) => void
+  onError?: (error: Error) => void
 }
 
-interface ApiError {
-  message: string
-  code?: string
-  status?: number
+export type ApiState<T> = {
+  data: Ref<UnwrapRef<T | null>>
+  loading: Ref<boolean>
+  error: Ref<Error | null>
+  execute: () => Promise<T | null>
+  reset: () => void
 }
 
-export function useApi() {
+/**
+ * 通用 API 請求 Composable
+ * @param url API 端點
+ * @param options 選項
+ * @returns API 狀態
+ */
+export function useApi<T = any>(
+  url: string | Ref<string>, 
+  options: ApiOptions = {}
+): ApiState<T> {
   const loading = ref(false)
-  const error = ref<ApiError | null>(null)
-
-  async function request<T>(
-    url: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  const data = ref<T | null>(null) as Ref<UnwrapRef<T | null>>
+  const error = ref<Error | null>(null)
+  
+  // 預設選項
+  const defaultOptions: ApiOptions = {
+    immediate: true,
+    transform: (data) => data,
+    onSuccess: () => {},
+    onError: () => {}
+  }
+  
+  // 合併選項
+  const finalOptions = { ...defaultOptions, ...options }
+  
+  // 執行 API 請求
+  const execute = async (): Promise<T | null> => {
     loading.value = true
     error.value = null
-
+    
     try {
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw {
-          message: data.message || '請求失敗',
-          status: response.status,
-          code: data.code,
-        }
+      const resolvedUrl = typeof url === 'string' ? url : url.value
+      const response = await $fetch<ApiResponse<T>>(resolvedUrl)
+      
+      if (!response.success) {
+        throw new Error(response.message || '請求失敗')
       }
-
-      return data
-    } catch (err) {
-      const apiError: ApiError = {
-        message: err instanceof Error ? err.message : '請求失敗',
+      
+      if (response.data !== undefined) {
+        const transformedData = finalOptions.transform 
+          ? finalOptions.transform(response.data) 
+          : response.data
+          
+        data.value = transformedData as UnwrapRef<T>
+        finalOptions.onSuccess?.(transformedData)
+        return transformedData
       }
-      if (typeof err === 'object' && err !== null) {
-        apiError.code = (err as any).code
-        apiError.status = (err as any).status
-      }
-      error.value = apiError
-      throw apiError
+      
+      return null
+    } catch (err: any) {
+      const errorObj = err instanceof Error 
+        ? err 
+        : new Error(err?.message || '發生未知錯誤')
+        
+      error.value = errorObj
+      finalOptions.onError?.(errorObj)
+      return null
     } finally {
       loading.value = false
     }
   }
-
-  async function get<T>(url: string, options: RequestInit = {}) {
-    return request<T>(url, { ...options, method: 'GET' })
+  
+  // 重置狀態
+  const reset = () => {
+    data.value = null as UnwrapRef<T | null>
+    loading.value = false
+    error.value = null
   }
+  
+  // 如果設置為立即執行，則立即發送請求
+  if (finalOptions.immediate) {
+    execute()
+  }
+  
+  return { data, loading, error, execute, reset }
+}
 
-  async function post<T>(url: string, data?: any, options: RequestInit = {}) {
-    return request<T>(url, {
-      ...options,
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+/**
+ * 用於 POST 請求的 API Composable
+ * @param url API 端點
+ * @param initialPayload 初始 payload
+ * @param options 選項
+ * @returns API 狀態和 submit 方法
+ */
+export function useApiPost<T = any, P extends Record<string, any> = Record<string, any>>(
+  url: string | Ref<string>, 
+  initialPayload?: P,
+  options: ApiOptions = {}
+) {
+  const payload = ref(initialPayload) as Ref<UnwrapRef<P | undefined>>
+  const loading = ref(false)
+  const data = ref<T | null>(null) as Ref<UnwrapRef<T | null>>
+  const error = ref<Error | null>(null)
+  
+  // 執行 POST 請求
+  const submit = async (submitPayload?: P): Promise<T | null> => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const resolvedUrl = typeof url === 'string' ? url : url.value
+      const finalPayload = submitPayload || payload.value
+      
+      const response = await $fetch<ApiResponse<T>>(resolvedUrl, {
+        method: 'POST',
+        body: finalPayload as Record<string, any>
+      })
+      
+      if (!response.success) {
+        throw new Error(response.message || '請求失敗')
+      }
+      
+      if (response.data !== undefined) {
+        const transformedData = options.transform 
+          ? options.transform(response.data) 
+          : response.data
+          
+        data.value = transformedData as UnwrapRef<T>
+        options.onSuccess?.(transformedData)
+        return transformedData
+      }
+      
+      return null
+    } catch (err: any) {
+      const errorObj = err instanceof Error 
+        ? err 
+        : new Error(err?.message || '發生未知錯誤')
+        
+      error.value = errorObj
+      options.onError?.(errorObj)
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  // 設置 payload
+  const setPayload = (newPayload: P) => {
+    payload.value = newPayload as UnwrapRef<P>
+  }
+  
+  // 重置狀態
+  const reset = () => {
+    data.value = null as UnwrapRef<T | null>
+    loading.value = false
+    error.value = null
+  }
+  
+  return { 
+    data, 
+    loading, 
+    error, 
+    payload, 
+    submit, 
+    setPayload, 
+    reset 
+  }
+}
+
+/**
+ * 用於 CRUD 操作的 API Composable
+ * @param baseUrl API 基礎端點
+ * @param options 選項
+ */
+export function useApiCrud<T = any, P extends Record<string, any> = Record<string, any>>(
+  baseUrl: string | Ref<string>,
+  options: ApiOptions = {}
+) {
+  const resolvedBaseUrl = computed(() => {
+    return typeof baseUrl === 'string' ? baseUrl : baseUrl.value
+  })
+  
+  // 獲取所有項目
+  const list = useApi<T[]>(resolvedBaseUrl, {
+    immediate: false,
+    ...options
+  })
+  
+  // 獲取單個項目
+  const get = (id: string | number) => {
+    const itemUrl = computed(() => `${resolvedBaseUrl.value}/${id}`)
+    return useApi<T>(itemUrl, {
+      immediate: true,
+      ...options
     })
   }
-
-  async function put<T>(url: string, data?: any, options: RequestInit = {}) {
-    return request<T>(url, {
+  
+  // 創建項目
+  const create = useApiPost<T, P>(resolvedBaseUrl, undefined, options)
+  
+  // 更新項目
+  const update = (id: string | number, payload: P) => {
+    const updateUrl = computed(() => `${resolvedBaseUrl.value}/${id}`)
+    return useApiPost<T, P>(updateUrl, payload, {
       ...options,
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      immediate: false
     })
   }
-
-  async function patch<T>(url: string, data?: any, options: RequestInit = {}) {
-    return request<T>(url, {
-      ...options,
-      method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
-    })
+  
+  // 刪除項目
+  const remove = async (id: string | number): Promise<boolean> => {
+    try {
+      const response = await $fetch<ApiResponse>(`${resolvedBaseUrl.value}/${id}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.success) {
+        throw new Error(response.message || '刪除失敗')
+      }
+      
+      options.onSuccess?.(true)
+      return true
+    } catch (err: any) {
+      const errorObj = err instanceof Error 
+        ? err 
+        : new Error(err?.message || '刪除過程中發生未知錯誤')
+        
+      options.onError?.(errorObj)
+      return false
+    }
   }
-
-  async function del<T>(url: string, options: RequestInit = {}) {
-    return request<T>(url, { ...options, method: 'DELETE' })
+  
+  // 刷新列表
+  const refresh = () => {
+    list.execute()
   }
-
+  
   return {
-    loading,
-    error,
-    request,
+    list,
     get,
-    post,
-    put,
-    patch,
-    delete: del,
+    create,
+    update,
+    remove,
+    refresh
   }
-} 
+}
+
+export default useApi 

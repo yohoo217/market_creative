@@ -26,7 +26,13 @@ export default defineEventHandler(async (event) => {
 
         const products = await Product.find(filter)
             .populate('user')
-            .populate('comments.user');
+            .populate('comments.user')
+            .lean()
+            .exec();
+
+        if (!products) {
+            throw new Error('無法獲取產品列表');
+        }
 
         return {
             success: true,
@@ -41,6 +47,7 @@ export default defineEventHandler(async (event) => {
                     price: product.price || 0,
                     image: product.image || '',
                     category: product.category || '',
+                    code: product.code || '',
                     user: product.user ? {
                         _id: product.user._id?.toString() || '',
                         name: product.user.name || '',
@@ -70,17 +77,17 @@ export default defineEventHandler(async (event) => {
                     status: product.status || '',
                     views: product.views || 0,
                     likes: product.likes || 0,
-                    targetFunding: product.fundraisingGoal || 0,
+                    fundraisingGoal: product.fundraisingGoal || 0,
                     currentFunding: product.currentFunding || 0
                 };
             }).filter(Boolean)
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error('獲取產品列表錯誤:', error);
-        return createError({
+        
+        throw createError({
             statusCode: 500,
-            message: '獲取產品列表失敗',
-            cause: error
+            statusMessage: error.message || '獲取產品列表失敗'
         });
     }
 }); 
