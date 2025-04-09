@@ -33,6 +33,19 @@ export default defineNuxtConfig({
 
   nitro: {
     plugins: ['~/server/plugins/mongodb.ts'],
+    preset: 'vercel',
+  },
+
+  vite: {
+    optimizeDeps: {
+      exclude: ['fsevents'],
+      include: ['@rollup/rollup-wasm']
+    },
+    build: {
+      rollupOptions: {
+        external: ['@rollup/rollup-linux-x64-gnu']
+      }
+    }
   },
 
   runtimeConfig: {
