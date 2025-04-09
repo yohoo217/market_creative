@@ -34,7 +34,6 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-12-04',
 
   nitro: {
-    plugins: ['~/server/plugins/mongodb.ts'],
     preset: 'vercel',
     prerender: {
       crawlLinks: false,
