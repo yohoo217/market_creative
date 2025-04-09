@@ -149,7 +149,7 @@
       
       <!-- 篩選後沒有結果 -->
       <div v-else-if="filteredIdeas.length === 0" class="bg-white rounded-lg shadow-md p-8 text-center my-8">
-        <img src="/empty-proposals.svg" alt="沒有符合條件的結果" class="w-40 h-40 mx-auto mb-4 opacity-60">
+        <img src="/images/empty-proposals.svg" alt="沒有符合條件的結果" class="w-40 h-40 mx-auto mb-4 opacity-60">
         <h3 class="text-xl font-semibold mb-2">沒有符合條件的創意</h3>
         <p class="text-gray-600 mb-6">嘗試調整您的篩選條件或搜尋關鍵詞</p>
         <Button label="清除篩選" icon="pi pi-filter-slash" @click="clearFilters" />
