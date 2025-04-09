@@ -1,9 +1,10 @@
 [build]
-command = "npm run build"
+command = "npm install && nuxt build"
 directory = ".output/public"
 
 [build.environment]
 NODE_VERSION = "20"
+NPM_FLAGS = "--prefer-offline --no-audit"
 
 [site]
 bucket = ".output/public"
