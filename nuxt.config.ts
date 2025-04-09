@@ -38,7 +38,8 @@ export default defineNuxtConfig({
     prerender: {
       crawlLinks: false,
       routes: []
-    }
+    },
+    plugins: ['~/server/plugins/mongodb.ts'],
   },
 
   vite: {
@@ -56,16 +57,13 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // 私有配置（僅在伺服器端可用）
     sessionSecret: process.env.SESSION_SECRET,
-    // 為了純靜態生成，暫時註釋掉數據庫配置
-    /*
     mongodb: {
       uri: process.env.MONGODB_URI
     },
-    */
     
     // 公開配置（客戶端和伺服器端都可用）
     public: {
-      apiBase: '/api' // 如果API路由也依賴數據庫，可能也需要調整
+      apiBase: '/api'
     }
   }
 })

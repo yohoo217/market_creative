@@ -46,7 +46,7 @@
 
       <!-- 沒有提案時顯示 -->
       <div v-else-if="myProposals.length === 0" class="bg-white rounded-lg shadow p-8 text-center">
-        <img src="/images/empty-proposals.svg" alt="沒有提案" class="w-32 h-32 mx-auto mb-4 opacity-50">
+        <img src="/empty-proposals.svg" alt="沒有提案" class="w-32 h-32 mx-auto mb-4 opacity-50">
         <h3 class="text-xl font-semibold mb-2">您還沒有提交任何提案</h3>
         <p class="text-gray-600 mb-6">瀏覽創意庫並找到您感興趣的項目!</p>
         <Button label="瀏覽創意" icon="pi pi-search" @click="router.push('/products')" />

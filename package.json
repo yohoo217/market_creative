@@ -2,15 +2,12 @@
   "name": "nuxt-app",
   "private": true,
   "type": "module",
-  "packageManager": "npm@10.2.4",
   "scripts": {
-    "build": "nuxt generate",
+    "build": "nuxt build",
     "dev": "nuxt dev --host 0.0.0.0",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "",
-    "pages:dev": "wrangler pages dev .output/public --compatibility-flag=nodejs_compat",
-    "pages:deploy": "wrangler pages deploy .output/public --project-name=test"
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.12.2",
@@ -48,8 +45,6 @@
     "@types/qrcode": "^1.5.5",
     "@types/speakeasy": "^2.0.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3",
-    "wrangler": "^3.114.4",
-    "@rollup/rollup-linux-x64-gnu": "^4.12.1"
+    "typescript": "^5.7.3"
   }
 }
