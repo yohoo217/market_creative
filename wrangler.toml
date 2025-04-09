@@ -1,0 +1,20 @@
+[build]
+command = "npm run build"
+directory = ".output/public"
+
+[build.environment]
+NODE_VERSION = "20"
+
+[site]
+bucket = ".output/public"
+
+[env.production]
+routes = [
+  { pattern = "/_nuxt/*", asset = true },
+  { pattern = "/images/*", asset = true },
+  { pattern = "/favicon.ico", asset = true },
+  { pattern = "/*", function = "functions", asset = false }
+]
+
+[functions]
+directory = ".output/server" 
