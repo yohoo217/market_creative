@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "npm@10.2.4",
   "scripts": {
-    "build": "npm install && nuxt build",
+    "build": "npm install --omit=optional && nuxt build",
     "dev": "nuxt dev --host 0.0.0.0",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
