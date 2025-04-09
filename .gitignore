@@ -25,3 +25,6 @@ logs
 
 .codegpt
 .qodo
+
+.wrangler
+.dev.vars
