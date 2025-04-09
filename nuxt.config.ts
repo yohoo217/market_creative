@@ -3,6 +3,8 @@ import { defineNuxtConfig } from "nuxt/config";
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+  
+  ssr: false,
 
   modules: [
     '@nuxtjs/tailwindcss',
@@ -33,7 +35,7 @@ export default defineNuxtConfig({
 
   nitro: {
     plugins: ['~/server/plugins/mongodb.ts'],
-    preset: 'vercel',
+    preset: 'vercel-edge',
   },
 
   vite: {
