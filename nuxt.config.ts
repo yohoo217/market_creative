@@ -36,6 +36,10 @@ export default defineNuxtConfig({
   nitro: {
     plugins: ['~/server/plugins/mongodb.ts'],
     preset: 'vercel',
+    prerender: {
+      crawlLinks: false,
+      routes: []
+    }
   },
 
   vite: {
