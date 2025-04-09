@@ -1,6 +1,6 @@
-import { connectToMongoDB } from '../utils/mongodb';
-import { defineNitroPlugin } from 'nitropack/runtime/plugin';
+// import { connectToMongoDB } from '../utils/mongodb';
+// import { defineNitroPlugin } from 'nitropack/runtime/plugin';
 
-export default defineNitroPlugin(async () => {
-    await connectToMongoDB();
-}); 
+// export default defineNitroPlugin(async () => {
+//     await connectToMongoDB();
+// }); 
