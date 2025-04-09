@@ -4,11 +4,11 @@
   "type": "module",
   "packageManager": "npm@10.2.4",
   "scripts": {
-    "build": "npm install --omit=optional && nuxt build",
+    "build": "npm install --omit=optional --no-package-lock && NODE_OPTIONS=\"--max-old-space-size=4096 --no-experimental-fetch\" nuxt build",
     "dev": "nuxt dev --host 0.0.0.0",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "prepare-nuxt": "nuxt prepare",
     "pages:dev": "wrangler pages dev .output/public --compatibility-flag=nodejs_compat",
     "pages:deploy": "wrangler pages deploy .output/public --project-name=test"
   },

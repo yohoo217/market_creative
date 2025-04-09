@@ -1,10 +1,12 @@
 [build]
-command = "npm install && nuxt build"
+command = "NODE_OPTIONS=\"--max-old-space-size=4096 --no-experimental-fetch\" npm install --omit=optional --no-package-lock && npm run build"
 directory = ".output/public"
 
 [build.environment]
 NODE_VERSION = "20"
-NPM_FLAGS = "--prefer-offline --no-audit"
+NPM_FLAGS = "--prefer-offline --no-audit --no-package-lock --omit=optional"
+ROLLUP_SKIP_BROWSER_BUILD = "true"
+NODE_ENV = "production"
 
 [site]
 bucket = ".output/public"
