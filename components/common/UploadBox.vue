@@ -23,9 +23,51 @@
 </template>
 
 <script setup lang="ts">
-const onUpload = (event: any) => {
-  // TODO: Implement file upload logic
-  console.log('Files uploaded:', event.files)
+import { useToast } from 'primevue/usetoast'
+
+const toast = useToast()
+const emit = defineEmits(['upload-success'])
+
+const onUpload = async (event: any) => {
+  try {
+    const files = event.files
+    const uploadedUrls = []
+
+    for (const file of files) {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const { data, error } = await useFetch('/api/media/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (error.value) {
+        throw new Error(error.value.message || '上傳失敗')
+      }
+
+      if (data.value?.success) {
+        uploadedUrls.push(data.value.data.url)
+      }
+    }
+
+    emit('upload-success', uploadedUrls)
+    
+    toast.add({
+      severity: 'success',
+      summary: '上傳成功',
+      detail: '檔案已成功上傳到媒體庫',
+      life: 3000
+    })
+  } catch (error: any) {
+    console.error('上傳失敗:', error)
+    toast.add({
+      severity: 'error',
+      summary: '上傳失敗',
+      detail: error.message || '上傳檔案時發生錯誤',
+      life: 3000
+    })
+  }
 }
 </script>
 
